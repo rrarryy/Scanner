@@ -165,6 +165,12 @@ const mockDatabase = {
     lot: "LOT-889-VX",
     detalii: "Fabricat: 10 Ianuarie 2026. Transmitator de presiune."
   },
+  "TTM-I4N-R-AB": {
+    website: "https://www.industrial-sensors-example.com/ttm-i4n",
+    producator: "Thermal Components Factory",
+    lot: "SERIA-R-AB-2026",
+    detalii: "Senzor modular avansat. Verificat functional."
+  },
   "1234567890128": {
     website: "https://www.example-manufacturer.ro",
     producator: "Compania de Test S.A.",
@@ -229,7 +235,6 @@ async function initOCR() {
   }
 }
 
-// Functia care forteaza asteptarea incarcarii inainte ca butonul sa poata fi apasat
 async function bootSystem() {
   btnStart.disabled = true;
   
@@ -241,7 +246,7 @@ async function bootSystem() {
     return;
   }
 
-  setStatus('Pasul 2/2', 'Se descarca motorul AI pentru text (poate dura cateva secunde)...', 'warn');
+  setStatus('Pasul 2/2', 'Se descarca motorul AI pentru text (OCR)...', 'warn');
   const ocrReady = await initOCR();
 
   if (ocrReady) {
@@ -309,10 +314,20 @@ async function processVideoFrameForOCR() {
   const videoElement = document.querySelector('#reader video');
   if (videoElement && videoElement.readyState === videoElement.HAVE_ENOUGH_DATA) {
     try {
-      const result = await ocrWorker.recognize(videoElement);
+      // METODA NOUA: Creare element canvas pentru a realiza o "fotografie" clara a cadrului
+      const canvas = document.createElement('canvas');
+      canvas.width = videoElement.videoWidth;
+      canvas.height = videoElement.videoHeight;
+      const ctx = canvas.getContext('2d');
+      ctx.drawImage(videoElement, 0, 0, canvas.width, canvas.height);
+
+      // Trimitem fotografia statica catre motorul AI, nu fluxul video live
+      const result = await ocrWorker.recognize(canvas);
       const text = result.data.text;
       
-      const regexTiparIndustrial = /[A-Z0-9]{2,}-[A-Z0-9]{3,}/g;
+      // ALGORITM ACTUALIZAT: Permite litere mici/mari si ORICATE cratime intre ele
+      // Aceasta va gasi si "CS-PT1200", dar si "TTM-i4N-R-AB"
+      const regexTiparIndustrial = /[a-zA-Z0-9]{2,}(?:-[a-zA-Z0-9]+)+/g;
       const meciuri = text.match(regexTiparIndustrial);
 
       if (meciuri && meciuri.length > 0) {
@@ -324,6 +339,7 @@ async function processVideoFrameForOCR() {
     }
   }
   
+  // Repetam procedura o data la 1.5 secunde pentru a evita blocajele de procesor
   setTimeout(processVideoFrameForOCR, 1500);
 }
 
@@ -331,7 +347,6 @@ async function startScan() {
   const cameraId = cameraSelect.value;
   if (!cameraId) return;
 
-  // S-au adaugat ABSOLUT TOATE formatele posibile pentru o scanare instanta
   const formatsToSupport = [
     Html5QrcodeSupportedFormats.QR_CODE, Html5QrcodeSupportedFormats.DATA_MATRIX,
     Html5QrcodeSupportedFormats.AZTEC, Html5QrcodeSupportedFormats.PDF_417,
@@ -346,11 +361,7 @@ async function startScan() {
   try {
     await scanner.start(
       cameraId,
-      { 
-        fps: 15, // FPS marit pentru reactie mai rapida
-        // S-a eliminat limitarea qrbox pentru a permite citirea de pe intreg ecranul, ideal pentru coduri lungi
-        videoConstraints: { deviceId: { exact: cameraId }, width: { ideal: 1920 }, height: { ideal: 1080 } }
-      },
+      { fps: 15, videoConstraints: { deviceId: { exact: cameraId }, width: { ideal: 1920 }, height: { ideal: 1080 } } },
       (decodedText, decodedResult) => {
         const formatName = (decodedResult && decodedResult.result && decodedResult.result.format && decodedResult.result.format.formatName) || 'Cod Standard';
         handleSuccessfulScan(decodedText, formatName);
@@ -420,7 +431,6 @@ function beep() {
 btnStart.addEventListener('click', startScan);
 btnStop.addEventListener('click', stopScan);
 
-// Acum pornim sistemele secvential
 bootSystem();
 </script>
 </body>
