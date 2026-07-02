@@ -1,0 +1,519 @@
+<!DOCTYPE html>
+<html lang="ro">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>Cititor de Coduri — QR &amp; 2D</title>
+<!-- Biblioteca de scanare: html5-qrcode (motor ZXing). Necesită internet la prima încărcare. -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html5-qrcode/2.3.8/html5-qrcode.min.js"></script>
+<!-- Tipografia Inter — standardul în aplicațiile business moderne -->
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  /* ==========================================================
+     SISTEM DE DESIGN — DIRECȚIE "BUSINESS"
+     Fundal deschis, carduri albe, un singur accent: albastru
+     instituțional. Stări semnalizate prin pastile de status.
+     ========================================================== */
+  :root {
+    --bg:          #f2f4f7;
+    --surface:     #ffffff;
+    --border:      #dfe4ea;
+    --ink:         #15212e;
+    --ink-soft:    #5b6875;
+    --primary:     #0f4c81;   /* albastru instituțional */
+    --primary-dk:  #0b3a63;
+    --success:     #157f4d;
+    --success-bg:  #e7f4ee;
+    --danger:      #b3261e;
+    --danger-bg:   #fbecea;
+    --neutral-bg:  #eef1f5;
+    --radius:      12px;
+    --shadow:      0 1px 2px rgba(21,33,46,.06), 0 4px 16px rgba(21,33,46,.06);
+    --mono: "SF Mono", "Cascadia Mono", Consolas, "Roboto Mono", monospace;
+    --sans: "Inter", -apple-system, "Segoe UI", Roboto, Arial, sans-serif;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    background: var(--bg);
+    color: var(--ink);
+    font-family: var(--sans);
+    -webkit-font-smoothing: antialiased;
+    min-height: 100vh;
+  }
+
+  /* ---------- Bara de antet ---------- */
+  .topbar {
+    background: var(--surface);
+    border-bottom: 1px solid var(--border);
+    padding: 14px 20px;
+    display: flex; align-items: center; gap: 12px;
+  }
+  .logo {
+    width: 34px; height: 34px; border-radius: 8px;
+    background: var(--primary); color: #fff;
+    display: flex; align-items: center; justify-content: center;
+    font-weight: 700; font-size: 15px; letter-spacing: -0.5px;
+    flex-shrink: 0;
+  }
+  .topbar h1 { font-size: 15px; font-weight: 600; letter-spacing: -0.1px; }
+  .topbar .tag { font-size: 12px; color: var(--ink-soft); margin-top: 1px; }
+
+  main { max-width: 640px; margin: 0 auto; padding: 24px 16px 48px; }
+
+  /* ---------- Card generic ---------- */
+  .card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    box-shadow: var(--shadow);
+    overflow: hidden;
+  }
+  .card + .card { margin-top: 16px; }
+  .card-head {
+    padding: 14px 18px;
+    border-bottom: 1px solid var(--border);
+    display: flex; align-items: center; justify-content: space-between; gap: 10px;
+  }
+  .card-head h2 { font-size: 13px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.8px; color: var(--ink-soft); }
+  .card-body { padding: 18px; }
+
+  /* ---------- Pastile de status ---------- */
+  .pill {
+    font-size: 12px; font-weight: 600;
+    padding: 4px 10px; border-radius: 999px;
+    display: inline-flex; align-items: center; gap: 6px;
+    background: var(--neutral-bg); color: var(--ink-soft);
+    white-space: nowrap;
+  }
+  .pill::before { content: ""; width: 7px; height: 7px; border-radius: 50%; background: currentColor; }
+  .pill.ok  { background: var(--success-bg); color: var(--success); }
+  .pill.err { background: var(--danger-bg);  color: var(--danger); }
+
+  /* ---------- Vizor ---------- */
+  .viewfinder {
+    position: relative; background: #0e1319;
+    min-height: 300px;
+    display: flex; align-items: center; justify-content: center;
+  }
+  #reader { width: 100%; }
+  /* Oglindirea: doar imaginea afișată este întoarsă; cadrele analizate
+     de biblioteca de scanare rămân neatinse, deci citirea nu e afectată. */
+  .viewfinder.mirror #reader video { transform: scaleX(-1); }
+
+  .placeholder {
+    position: absolute; inset: 0;
+    display: flex; flex-direction: column; align-items: center; justify-content: center;
+    gap: 8px; text-align: center; padding: 24px;
+    color: #94a1b0; font-size: 13.5px; line-height: 1.5; pointer-events: none;
+  }
+  .placeholder .icon { font-size: 30px; opacity: .8; }
+
+  .scanline {
+    position: absolute; left: 10%; right: 10%; height: 2px;
+    background: linear-gradient(90deg, transparent, #4da3ff, transparent);
+    box-shadow: 0 0 10px 1px rgba(77,163,255,.5);
+    animation: sweep 2.6s ease-in-out infinite;
+    display: none; pointer-events: none;
+  }
+  .viewfinder.active .scanline { display: block; }
+  @keyframes sweep { 0%,100% { top: 14%; } 50% { top: 84%; } }
+  @media (prefers-reduced-motion: reduce) { .scanline { animation: none; top: 50%; } }
+
+  /* ---------- Controale ---------- */
+  .controls { display: flex; gap: 10px; flex-wrap: wrap; }
+  select, button {
+    font-family: var(--sans); font-size: 14px; font-weight: 500;
+    border-radius: 8px; border: 1px solid var(--border);
+    padding: 10px 14px; background: var(--surface); color: var(--ink);
+    cursor: pointer;
+  }
+  select { flex: 1 1 220px; }
+  select:focus-visible, button:focus-visible { outline: 2px solid var(--primary); outline-offset: 2px; }
+  button:hover:not(:disabled) { border-color: #c4cdd7; }
+
+  .btn-primary {
+    background: var(--primary); border-color: var(--primary);
+    color: #fff; font-weight: 600; flex: 1 1 150px;
+  }
+  .btn-primary:hover:not(:disabled) { background: var(--primary-dk); border-color: var(--primary-dk); }
+  .btn-primary:disabled { opacity: .45; cursor: not-allowed; }
+  #btnStop { display: none; flex: 1 1 150px; color: var(--danger); border-color: var(--danger); font-weight: 600; }
+  #btnStop:hover { background: var(--danger-bg); }
+
+  .options-row {
+    margin-top: 14px; padding-top: 14px; border-top: 1px solid var(--border);
+    display: flex; align-items: center; justify-content: space-between; gap: 10px; flex-wrap: wrap;
+  }
+  .options-row .opt-label { font-size: 13.5px; color: var(--ink-soft); }
+
+  /* Comutator (switch) pentru oglindă */
+  .switch { position: relative; display: inline-block; width: 42px; height: 24px; flex-shrink: 0; }
+  .switch input { opacity: 0; width: 0; height: 0; }
+  .switch .track {
+    position: absolute; inset: 0; border-radius: 999px;
+    background: #c9d2dc; transition: background .15s; cursor: pointer;
+  }
+  .switch .track::after {
+    content: ""; position: absolute; top: 3px; left: 3px;
+    width: 18px; height: 18px; border-radius: 50%; background: #fff;
+    box-shadow: 0 1px 2px rgba(0,0,0,.25); transition: transform .15s;
+  }
+  .switch input:checked + .track { background: var(--primary); }
+  .switch input:checked + .track::after { transform: translateX(18px); }
+  .switch input:focus-visible + .track { outline: 2px solid var(--primary); outline-offset: 2px; }
+
+  /* ---------- Rezultat curent ---------- */
+  #resultSection { display: none; }
+  #resultSection.visible { display: block; }
+  .result-value {
+    font-family: var(--mono); font-size: 14.5px; line-height: 1.6;
+    word-break: break-all;
+    background: var(--neutral-bg); border: 1px solid var(--border);
+    border-radius: 8px; padding: 14px; margin-bottom: 14px;
+  }
+  .result-actions { display: flex; gap: 8px; flex-wrap: wrap; }
+  .result-actions button, .result-actions a {
+    font-size: 13px; font-weight: 600; padding: 8px 16px; border-radius: 8px;
+    border: 1px solid var(--border); background: var(--surface);
+    color: var(--primary); text-decoration: none; cursor: pointer;
+    font-family: var(--sans);
+  }
+  .result-actions button:hover, .result-actions a:hover { background: var(--neutral-bg); }
+  #btnOpenLink { display: none; }
+
+  /* ---------- Istoric (tabel de înregistrări) ---------- */
+  .table-wrap { overflow-x: auto; }
+  table { width: 100%; border-collapse: collapse; font-size: 13px; }
+  thead th {
+    text-align: left; font-size: 11px; font-weight: 600;
+    text-transform: uppercase; letter-spacing: 0.8px; color: var(--ink-soft);
+    padding: 10px 18px; background: #f7f9fb; border-bottom: 1px solid var(--border);
+    white-space: nowrap;
+  }
+  tbody td { padding: 11px 18px; border-bottom: 1px solid var(--border); vertical-align: top; }
+  tbody tr:last-child td { border-bottom: none; }
+  td.c-time { font-family: var(--mono); font-size: 12px; color: var(--ink-soft); white-space: nowrap; }
+  td.c-fmt  { white-space: nowrap; }
+  td.c-fmt .pill { font-size: 11px; padding: 3px 9px; }
+  td.c-val  { font-family: var(--mono); word-break: break-all; min-width: 180px; }
+  .empty-state { padding: 26px 18px; text-align: center; color: var(--ink-soft); font-size: 13.5px; }
+
+  footer { text-align: center; margin-top: 22px; font-size: 12px; color: var(--ink-soft); }
+</style>
+</head>
+<body>
+
+<div class="topbar">
+  <div class="logo">▦</div>
+  <div>
+    <h1>Cititor de Coduri</h1>
+    <div class="tag">QR · Data Matrix · Aztec · PDF417 · coduri de bare 1D</div>
+  </div>
+</div>
+
+<main>
+
+  <!-- ============ CARD: SCANER ============ -->
+  <div class="card">
+    <div class="card-head">
+      <h2>Scaner</h2>
+      <span class="pill" id="statusPill">Se inițializează</span>
+    </div>
+
+    <div class="viewfinder mirror" id="viewfinder">
+      <div id="reader"></div>
+      <div class="placeholder" id="placeholder">
+        <div class="icon">📷</div>
+        <div>Alege camera și apasă „Pornește scanarea".<br>Browserul îți va cere permisiunea pentru cameră — apasă „Permite".</div>
+      </div>
+      <div class="scanline"></div>
+    </div>
+
+    <div class="card-body">
+      <div class="controls">
+        <select id="cameraSelect" aria-label="Alege camera">
+          <option value="">Se caută camerele…</option>
+        </select>
+        <button id="btnStart" class="btn-primary" disabled>Pornește scanarea</button>
+        <button id="btnStop">Oprește scanarea</button>
+      </div>
+      <div class="options-row">
+        <span class="opt-label">Imagine în oglindă <span style="opacity:.7">(recomandat pe camera frontală)</span></span>
+        <label class="switch">
+          <input type="checkbox" id="mirrorToggle" checked>
+          <span class="track"></span>
+        </label>
+      </div>
+      <div class="options-row" style="border-top:none; padding-top:6px; margin-top:6px;">
+        <span class="opt-label" id="statusDetail">—</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- ============ CARD: ULTIMUL REZULTAT ============ -->
+  <div class="card" id="resultSection">
+    <div class="card-head">
+      <h2>Ultimul cod citit</h2>
+      <span class="pill ok" id="resultFormat"></span>
+    </div>
+    <div class="card-body">
+      <div class="result-value" id="resultValue"></div>
+      <div class="result-actions">
+        <button id="btnCopy">Copiază textul</button>
+        <a id="btnOpenLink" href="#" target="_blank" rel="noopener">Deschide linkul ↗</a>
+      </div>
+    </div>
+  </div>
+
+  <!-- ============ CARD: ISTORIC ============ -->
+  <div class="card">
+    <div class="card-head">
+      <h2>Istoric sesiune</h2>
+      <span class="pill" id="countPill">0 citiri</span>
+    </div>
+    <div class="table-wrap">
+      <table id="historyTable" style="display:none">
+        <thead>
+          <tr><th>Ora</th><th>Tip</th><th>Conținut</th></tr>
+        </thead>
+        <tbody id="historyBody"></tbody>
+      </table>
+    </div>
+    <div class="empty-state" id="historyEmpty">Nicio citire înregistrată în această sesiune.</div>
+  </div>
+
+  <footer>Datele scanate rămân exclusiv pe acest dispozitiv.</footer>
+
+</main>
+
+<script>
+/* =====================================================================
+   LOGICA APLICAȚIEI — explicată pas cu pas în comentarii
+   ===================================================================== */
+
+// --- Elementele din pagină cu care lucrăm ---
+const cameraSelect = document.getElementById('cameraSelect');
+const btnStart     = document.getElementById('btnStart');
+const btnStop      = document.getElementById('btnStop');
+const statusPill   = document.getElementById('statusPill');
+const statusDetail = document.getElementById('statusDetail');
+const viewfinder   = document.getElementById('viewfinder');
+const placeholder  = document.getElementById('placeholder');
+const mirrorToggle = document.getElementById('mirrorToggle');
+const resultSection= document.getElementById('resultSection');
+const resultValue  = document.getElementById('resultValue');
+const resultFormat = document.getElementById('resultFormat');
+const btnCopy      = document.getElementById('btnCopy');
+const btnOpenLink  = document.getElementById('btnOpenLink');
+const historyTable = document.getElementById('historyTable');
+const historyBody  = document.getElementById('historyBody');
+const historyEmpty = document.getElementById('historyEmpty');
+const countPill    = document.getElementById('countPill');
+
+let scanner = null;          // instanța bibliotecii html5-qrcode
+let running = false;         // scanarea este activă?
+let lastText = null;         // ultimul text citit (pentru anti-duplicat)
+let lastTime = 0;            // momentul ultimei citiri (ms)
+let scanCount = 0;           // numărul total de citiri din sesiune
+
+// --- Actualizarea stării afișate (pastila + detaliul de sub controale) ---
+function setStatus(pillText, detailText, kind) {
+  statusPill.textContent = pillText;
+  statusPill.className = 'pill' + (kind ? ' ' + kind : '');
+  statusDetail.textContent = detailText || '—';
+}
+
+// --- Formatele acceptate: QR + 2D + cele mai comune 1D ---
+const FORMATS = [
+  Html5QrcodeSupportedFormats.QR_CODE,      // QR
+  Html5QrcodeSupportedFormats.DATA_MATRIX,  // 2D
+  Html5QrcodeSupportedFormats.AZTEC,        // 2D
+  Html5QrcodeSupportedFormats.PDF_417,      // 2D
+  Html5QrcodeSupportedFormats.EAN_13,       // 1D
+  Html5QrcodeSupportedFormats.EAN_8,
+  Html5QrcodeSupportedFormats.UPC_A,
+  Html5QrcodeSupportedFormats.UPC_E,
+  Html5QrcodeSupportedFormats.CODE_128,
+  Html5QrcodeSupportedFormats.CODE_39,
+  Html5QrcodeSupportedFormats.ITF
+];
+
+// --- Comutatorul de oglindire: adaugă/scoate clasa CSS de pe vizor ---
+mirrorToggle.addEventListener('change', () => {
+  viewfinder.classList.toggle('mirror', mirrorToggle.checked);
+});
+
+// --- Pasul 1: detectarea camerelor la încărcarea paginii ---
+async function initCameras() {
+  if (location.protocol === 'file:') {
+    setStatus('Blocat', 'Fișier deschis direct (file://) — pornește serverul local și accesează http://localhost:8000', 'err');
+    cameraSelect.innerHTML = '<option value="">Indisponibil pe file://</option>';
+    return;
+  }
+  try {
+    const devices = await Html5Qrcode.getCameras();
+    if (!devices || devices.length === 0) {
+      setStatus('Fără cameră', 'Nu am găsit nicio cameră pe acest dispozitiv.', 'err');
+      cameraSelect.innerHTML = '<option value="">Nicio cameră găsită</option>';
+      return;
+    }
+    cameraSelect.innerHTML = '';
+    devices.forEach((d, i) => {
+      const opt = document.createElement('option');
+      opt.value = d.id;
+      opt.textContent = d.label || ('Camera ' + (i + 1));
+      cameraSelect.appendChild(opt);
+    });
+    btnStart.disabled = false;
+    setStatus('Pregătit', devices.length + (devices.length === 1 ? ' cameră detectată.' : ' camere detectate.'), 'ok');
+  } catch (err) {
+    setStatus('Blocat', 'Acces la cameră refuzat sau indisponibil: ' + err, 'err');
+  }
+}
+
+// --- Pasul 2: pornirea scanării ---
+async function startScan() {
+  const cameraId = cameraSelect.value;
+  if (!cameraId) { setStatus('Atenție', 'Alege mai întâi o cameră.', 'err'); return; }
+
+  scanner = new Html5Qrcode('reader', {
+    formatsToSupport: FORMATS,
+    // Folosește detectorul de coduri încorporat în browser, dacă există —
+    // este mai rapid și citește mai bine codurile de bare 1D.
+    experimentalFeatures: { useBarCodeDetectorIfSupported: true }
+  });
+
+  const config = {
+    fps: 10,                              // cadre analizate pe secundă
+    // Casetă de țintire LATĂ (panoramică): codurile de bare 1D sunt late și
+    // scunde, deci trebuie să încapă integral pe orizontală. QR-urile se
+    // citesc la fel de bine și într-o casetă lată.
+    qrbox: function (vfWidth, vfHeight) {
+      return {
+        width:  Math.min(Math.floor(vfWidth * 0.85), 450),
+        height: Math.min(Math.floor(vfHeight * 0.55), 250)
+      };
+    },
+    aspectRatio: 1.333,                   // raport 4:3, stabil pe majoritatea camerelor
+    // Cerem camerei rezoluție mare — esențial pentru liniile subțiri ale
+    // codurilor 1D. Dacă camera nu o poate oferi, dă automat maximul ei.
+    videoConstraints: {
+      deviceId: { exact: cameraId },
+      width:  { ideal: 1920 },
+      height: { ideal: 1080 }
+    }
+  };
+
+  try {
+    setStatus('Pornire…', 'Se pornește camera…');
+    await scanner.start(cameraId, config, onScanSuccess, () => { /* cadre fără cod — ignorăm */ });
+    running = true;
+    viewfinder.classList.add('active');
+    placeholder.style.display = 'none';
+    btnStart.style.display = 'none';
+    btnStop.style.display = 'inline-block';
+    cameraSelect.disabled = true;
+    setStatus('Scanare activă', 'Ține codul în casetă. Codurile de bare: orizontal, integral în casetă, apropie/depărtează încet până liniile se văd clar.', 'ok');
+  } catch (err) {
+    setStatus('Eroare', 'Camera nu a putut porni: ' + err, 'err');
+    scanner = null;
+  }
+}
+
+// --- Pasul 3: oprirea scanării ---
+async function stopScan() {
+  if (scanner && running) {
+    await scanner.stop();
+    scanner.clear();
+  }
+  scanner = null;
+  running = false;
+  viewfinder.classList.remove('active');
+  placeholder.style.display = 'flex';
+  btnStart.style.display = 'inline-block';
+  btnStop.style.display = 'none';
+  cameraSelect.disabled = false;
+  setStatus('Oprit', 'Scanarea a fost oprită.');
+}
+
+// --- Pasul 4: la fiecare citire reușită ---
+function onScanSuccess(decodedText, decodedResult) {
+  // Anti-duplicat: același cod este acceptat din nou doar după 2 secunde.
+  const now = Date.now();
+  if (decodedText === lastText && (now - lastTime) < 2000) return;
+  lastText = decodedText;
+  lastTime = now;
+
+  const formatName = (decodedResult && decodedResult.result && decodedResult.result.format &&
+                      decodedResult.result.format.formatName) || 'Necunoscut';
+
+  // Cardul cu rezultatul principal
+  resultSection.classList.add('visible');
+  resultFormat.textContent = formatName;
+  resultValue.textContent = decodedText;
+
+  // Buton de deschidere doar dacă textul e un link web
+  if (/^https?:\/\//i.test(decodedText)) {
+    btnOpenLink.href = decodedText;
+    btnOpenLink.style.display = 'inline-block';
+  } else {
+    btnOpenLink.style.display = 'none';
+  }
+
+  // Tabelul de istoric
+  historyEmpty.style.display = 'none';
+  historyTable.style.display = 'table';
+  const tr = document.createElement('tr');
+  const t = new Date().toLocaleTimeString('ro-RO');
+  tr.innerHTML = '<td class="c-time">' + t + '</td>' +
+                 '<td class="c-fmt"><span class="pill ok"></span></td>' +
+                 '<td class="c-val"></td>';
+  tr.querySelector('.c-fmt .pill').textContent = formatName;
+  tr.querySelector('.c-val').textContent = decodedText;
+  historyBody.prepend(tr);
+
+  scanCount++;
+  countPill.textContent = scanCount + (scanCount === 1 ? ' citire' : ' citiri');
+
+  // Feedback: sunet scurt + vibrație (pe telefon)
+  beep();
+  if (navigator.vibrate) navigator.vibrate(80);
+}
+
+// --- Sunet de confirmare, generat direct în browser ---
+function beep() {
+  try {
+    const ctx = new (window.AudioContext || window.webkitAudioContext)();
+    const osc = ctx.createOscillator();
+    const gain = ctx.createGain();
+    osc.type = 'square';
+    osc.frequency.value = 1200;
+    gain.gain.setValueAtTime(0.08, ctx.currentTime);
+    gain.gain.exponentialRampToValueAtTime(0.0001, ctx.currentTime + 0.12);
+    osc.connect(gain).connect(ctx.destination);
+    osc.start();
+    osc.stop(ctx.currentTime + 0.12);
+  } catch (e) { /* dacă sunetul e blocat, continuăm fără el */ }
+}
+
+// --- Copierea rezultatului în clipboard ---
+btnCopy.addEventListener('click', async () => {
+  try {
+    await navigator.clipboard.writeText(resultValue.textContent);
+    btnCopy.textContent = 'Copiat ✓';
+    setTimeout(() => (btnCopy.textContent = 'Copiază textul'), 1500);
+  } catch (e) {
+    setStatus('Atenție', 'Copierea nu a reușit — selectează textul manual.', 'err');
+  }
+});
+
+btnStart.addEventListener('click', startScan);
+btnStop.addEventListener('click', stopScan);
+
+// Pornim detectarea camerelor imediat ce pagina s-a încărcat
+initCameras();
+</script>
+</body>
+</html>
