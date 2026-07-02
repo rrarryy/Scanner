@@ -5,9 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
 <title>Cititor Multi-Sistem — QR, Barcode & OCR</title>
 
-<!-- Biblioteca pentru Coduri de Bare si QR -->
 <script src="https://cdnjs.cloudflare.com/ajax/libs/html5-qrcode/2.3.8/html5-qrcode.min.js"></script>
-<!-- Biblioteca pentru OCR (Recunoastere Optica a Caracterelor) -->
 <script src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js"></script>
 
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -49,18 +47,16 @@
 
   .viewfinder { position: relative; background: #0e1319; min-height: 300px; display: flex; align-items: center; justify-content: center; }
   #reader { width: 100%; }
-  .viewfinder.mirror #reader video { transform: scaleX(-1); }
   
-  /* Suprapunere cand scanarea este pusa in pauza */
   .paused-overlay { position: absolute; inset: 0; background: rgba(14,19,25,0.85); display: none; flex-direction: column; align-items: center; justify-content: center; color: white; z-index: 10; font-size: 14px; font-weight: 500; }
   .viewfinder.is-paused .paused-overlay { display: flex; }
 
   .placeholder { position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 8px; text-align: center; padding: 24px; color: #94a1b0; font-size: 13.5px; }
   .placeholder .icon { font-size: 30px; opacity: .8; }
 
-  .scanline { position: absolute; left: 10%; right: 10%; height: 2px; background: linear-gradient(90deg, transparent, #4da3ff, transparent); box-shadow: 0 0 10px 1px rgba(77,163,255,.5); animation: sweep 2.6s ease-in-out infinite; display: none; z-index: 5; }
+  .scanline { position: absolute; left: 0; right: 0; height: 2px; background: linear-gradient(90deg, transparent, #4da3ff, transparent); box-shadow: 0 0 10px 1px rgba(77,163,255,.5); animation: sweep 2.6s ease-in-out infinite; display: none; z-index: 5; }
   .viewfinder.active:not(.is-paused) .scanline { display: block; }
-  @keyframes sweep { 0%,100% { top: 14%; } 50% { top: 84%; } }
+  @keyframes sweep { 0%,100% { top: 5%; } 50% { top: 95%; } }
 
   .controls { display: flex; gap: 10px; flex-wrap: wrap; }
   select, button { font-family: var(--sans); font-size: 14px; font-weight: 500; border-radius: 8px; border: 1px solid var(--border); padding: 10px 14px; background: var(--surface); color: var(--ink); cursor: pointer; }
@@ -69,7 +65,6 @@
   .btn-primary:disabled { opacity: .45; cursor: not-allowed; }
   #btnStop { display: none; flex: 1 1 150px; color: var(--danger); border-color: var(--danger); font-weight: 600; }
 
-  /* Design pentru afisarea detaliata a informatiilor (Task 1 & 4) */
   #resultSection { display: none; }
   #resultSection.visible { display: block; }
   
@@ -99,7 +94,6 @@
 </div>
 
 <main>
-  <!-- SECTIUNE CAMERA -->
   <div class="card">
     <div class="card-head">
       <h2>Senzor Optic</h2>
@@ -110,12 +104,12 @@
       <div id="reader"></div>
       <div class="placeholder" id="placeholder">
         <div class="icon">📷</div>
-        <div>Alege camera si apasa "Porneste".</div>
+        <div>Asteapta initializarea sistemelor...</div>
       </div>
       <div class="scanline"></div>
       <div class="paused-overlay">
         <div>Analiza oprita.</div>
-        <div style="font-size: 12px; font-weight: 400; opacity: 0.8; margin-top: 4px;">Asteapta preluarea datelor...</div>
+        <div style="font-size: 12px; font-weight: 400; opacity: 0.8; margin-top: 4px;">Datele au fost preluate cu succes.</div>
       </div>
     </div>
 
@@ -126,23 +120,19 @@
         <button id="btnStop">Opreste</button>
       </div>
       <div class="options-row" style="border-top:none; padding-top:6px; margin-top:6px;">
-        <span style="font-size: 12px; color: var(--ink-soft);" id="statusDetail">Verifica permisiunile camerei web.</span>
+        <span style="font-size: 12px; color: var(--ink-soft); font-weight: bold;" id="statusDetail">Incarcare...</span>
       </div>
     </div>
   </div>
 
-  <!-- SECTIUNE REZULTATE DETALIATE -->
   <div class="card" id="resultSection">
     <div class="card-head">
       <h2>Date Identificate</h2>
       <span class="pill ok" id="resultFormat">Tip Cod</span>
     </div>
     <div class="card-body">
-      
-      <!-- Prioritatea 1: Website Producator -->
       <a href="#" target="_blank" class="website-link-box" id="websiteLink" style="display:none;">Deschide Website Producator ↗</a>
 
-      <!-- Prioritatea 2: Informatii pe coloane -->
       <div class="data-grid">
         <div class="data-item full-width">
           <span class="data-label">Cod Brut Citit</span>
@@ -162,20 +152,12 @@
         </div>
       </div>
 
-      <!-- Buton obligatoriu pentru reluarea scanarii (Task 3) -->
       <button class="btn-next-scan" id="btnNextScan">URMATOAREA SCANARE</button>
-      
     </div>
   </div>
-
 </main>
 
 <script>
-/* =====================================================================
-   BAZA DE DATE VIRTUALA (Macheta)
-   Aici introducem codurile cunoscute pentru a afisa informatiile
-   complexe, deoarece un cod de bare simplu nu contine aceste date.
-   ===================================================================== */
 const mockDatabase = {
   "CS-PT1200": {
     website: "https://www.industrial-sensors-example.com/cs-pt1200",
@@ -191,9 +173,6 @@ const mockDatabase = {
   }
 };
 
-/* =====================================================================
-   VARIABILE DE SISTEM SI LOGICA
-   ===================================================================== */
 const cameraSelect = document.getElementById('cameraSelect');
 const btnStart = document.getElementById('btnStart');
 const btnStop = document.getElementById('btnStop');
@@ -213,7 +192,7 @@ const btnNextScan = document.getElementById('btnNextScan');
 
 let scanner = null;
 let running = false;
-let isPaused = false; // FANION CRITIC: Controleaza daca sistemul permite o noua scanare
+let isPaused = false;
 let ocrWorker = null;
 
 function setStatus(pillText, detailText, kind) {
@@ -222,19 +201,6 @@ function setStatus(pillText, detailText, kind) {
   statusDetail.textContent = detailText || '—';
 }
 
-// 1. Initializare OCR (Tesseract.js) in fundal
-async function initOCR() {
-  try {
-    setStatus('Se incarca', 'Se incarca motorul AI pentru OCR...', 'warn');
-    ocrWorker = await Tesseract.createWorker('eng');
-    setStatus('Pregatit', 'Motor OCR si Cititor Coduri pregatite.', 'ok');
-  } catch (error) {
-    setStatus('Eroare OCR', 'Nu s-a putut incarca recunoasterea de text.', 'err');
-    console.error("Tesseract Init Error:", error);
-  }
-}
-
-// 2. Initializare Camere Video
 async function initCameras() {
   try {
     const devices = await Html5Qrcode.getCameras();
@@ -245,35 +211,63 @@ async function initCameras() {
         opt.textContent = d.label || ('Camera ' + (i + 1));
         cameraSelect.appendChild(opt);
       });
-      btnStart.disabled = false;
-    } else {
-      setStatus('Fara camera', 'Nicio camera detectata.', 'err');
+      return true;
     }
   } catch (err) {
-    setStatus('Blocat', 'Acces la camera refuzat.', 'err');
+    console.warn("Eroare initializare camere:", err);
+  }
+  return false;
+}
+
+async function initOCR() {
+  try {
+    ocrWorker = await Tesseract.createWorker('eng');
+    return true;
+  } catch (error) {
+    console.error("Tesseract Init Error:", error);
+    return false;
   }
 }
 
-// 3. Functia centrala de procesare a datelor (declansata o singura data per scanare)
-function handleSuccessfulScan(codCitit, sursa) {
-  if (isPaused) return; // Daca suntem deja in pauza, ignoram orice alta detectie
+// Functia care forteaza asteptarea incarcarii inainte ca butonul sa poata fi apasat
+async function bootSystem() {
+  btnStart.disabled = true;
   
-  isPaused = true; // Blocare imediata: previne citirea aceluiasi cod sau a altui cod de pe eticheta
+  setStatus('Pasul 1/2', 'Se detecteaza camerele...', 'warn');
+  const camsFound = await initCameras();
   
-  if (scanner) {
-    scanner.pause(true); // Opreste motorul intern de coduri de bare
+  if (!camsFound) {
+    setStatus('Eroare', 'Nicio camera detectata sau acces refuzat.', 'err');
+    return;
   }
+
+  setStatus('Pasul 2/2', 'Se descarca motorul AI pentru text (poate dura cateva secunde)...', 'warn');
+  const ocrReady = await initOCR();
+
+  if (ocrReady) {
+    setStatus('Pregatit', 'Toate sistemele sunt gata de scanare.', 'ok');
+    document.querySelector('#placeholder div:last-child').textContent = 'Alege camera si apasa "Porneste".';
+    btnStart.disabled = false;
+  } else {
+    setStatus('Partial Pregatit', 'Motorul de text a dat eroare. Doar codurile de bare vor functiona.', 'warn');
+    document.querySelector('#placeholder div:last-child').textContent = 'Alege camera si apasa "Porneste".';
+    btnStart.disabled = false;
+  }
+}
+
+function handleSuccessfulScan(codCitit, sursa) {
+  if (isPaused) return;
+  
+  isPaused = true;
+  if (scanner) scanner.pause(true);
   
   viewfinder.classList.add('is-paused');
   beep();
   if (navigator.vibrate) navigator.vibrate([100, 50, 100]);
 
-  // Completare UI cu date brute
   resultFormat.textContent = "Detectat prin: " + sursa;
   rawCodeValue.textContent = codCitit;
   
-  // Cautare in Baza de Date Virtuala
-  // Ignoram spatiile suplimentare in cazul OCR-ului
   const searchKey = codCitit.trim().toUpperCase();
   const dateGasite = mockDatabase[searchKey];
 
@@ -289,13 +283,11 @@ function handleSuccessfulScan(codCitit, sursa) {
       websiteLink.style.display = 'none';
     }
   } else {
-    // Daca codul nu exista in baza de date
     infoProducator.textContent = "Necunoscut";
     infoLot.textContent = "Necunoscut";
-    infoDetalii.textContent = "Codul nu este inregistrat in sistem. Este necesara introducerea manuala in baza de date.";
+    infoDetalii.textContent = "Codul nu este inregistrat in sistem. Este necesara introducerea manuala.";
     websiteLink.style.display = 'none';
     
-    // Fallback: Daca rezultatul e doar un link simplu direct in QR
     if (/^https?:\/\//i.test(codCitit)) {
       websiteLink.href = codCitit;
       websiteLink.textContent = "Deschide Link-ul Direct ↗";
@@ -304,16 +296,11 @@ function handleSuccessfulScan(codCitit, sursa) {
   }
 
   resultSection.classList.add('visible');
-  setStatus('Pauza', 'Analiza oprita. Verifica rezultatele.', 'warn');
-  
-  // Deruleaza pagina in jos pentru a vedea rezultatele
+  setStatus('Pauza', 'Analiza oprita. Verifica rezultatele afisate.', 'warn');
   resultSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
 }
 
-// 4. Bucla pentru recunoasterea textului (OCR)
-// Aceasta functie ruleaza in paralel cu cititorul de coduri de bare
 async function processVideoFrameForOCR() {
-  // Daca nu rula scanerul, sau e in pauza, sau motorul OCR nu e gata, amanam
   if (!running || isPaused || !ocrWorker) {
     setTimeout(processVideoFrameForOCR, 1000);
     return;
@@ -322,39 +309,36 @@ async function processVideoFrameForOCR() {
   const videoElement = document.querySelector('#reader video');
   if (videoElement && videoElement.readyState === videoElement.HAVE_ENOUGH_DATA) {
     try {
-      // Analizam un cadru din video
       const result = await ocrWorker.recognize(videoElement);
       const text = result.data.text;
       
-      // Expresie Regulata pentru a cauta tipare de piese industriale (Ex: CS-PT1200)
-      // Cauta o secventa de minim 2 Litere/Cifre, urmate de cratima, urmate de minim 3 Litere/Cifre
       const regexTiparIndustrial = /[A-Z0-9]{2,}-[A-Z0-9]{3,}/g;
       const meciuri = text.match(regexTiparIndustrial);
 
       if (meciuri && meciuri.length > 0) {
-        // Am gasit un text valid pe eticheta
-        const codTextFound = meciuri[0];
-        handleSuccessfulScan(codTextFound, "Text OCR (AI)");
-        return; // Iesim din functie; isPaused va bloca re-executia pana la resetare
+        handleSuccessfulScan(meciuri[0], "Text OCR (AI)");
+        return;
       }
     } catch (err) {
-      console.warn("Eroare la procesarea OCR a cadrului", err);
+      console.warn("Eroare cadru OCR", err);
     }
   }
   
-  // Repetam analiza odata la 1.5 secunde pentru a nu suprasolicita procesorul
   setTimeout(processVideoFrameForOCR, 1500);
 }
 
-// 5. Pornirea Generala
 async function startScan() {
   const cameraId = cameraSelect.value;
   if (!cameraId) return;
 
+  // S-au adaugat ABSOLUT TOATE formatele posibile pentru o scanare instanta
   const formatsToSupport = [
     Html5QrcodeSupportedFormats.QR_CODE, Html5QrcodeSupportedFormats.DATA_MATRIX,
-    Html5QrcodeSupportedFormats.EAN_13, Html5QrcodeSupportedFormats.CODE_128,
-    Html5QrcodeSupportedFormats.CODE_39
+    Html5QrcodeSupportedFormats.AZTEC, Html5QrcodeSupportedFormats.PDF_417,
+    Html5QrcodeSupportedFormats.EAN_13, Html5QrcodeSupportedFormats.EAN_8,
+    Html5QrcodeSupportedFormats.UPC_A, Html5QrcodeSupportedFormats.UPC_E,
+    Html5QrcodeSupportedFormats.CODE_128, Html5QrcodeSupportedFormats.CODE_39,
+    Html5QrcodeSupportedFormats.ITF
   ];
 
   scanner = new Html5Qrcode('reader', { formatsToSupport: formatsToSupport, experimentalFeatures: { useBarCodeDetectorIfSupported: true } });
@@ -362,13 +346,16 @@ async function startScan() {
   try {
     await scanner.start(
       cameraId,
-      { fps: 10, qrbox: { width: 250, height: 150 }, aspectRatio: 1.333 },
+      { 
+        fps: 15, // FPS marit pentru reactie mai rapida
+        // S-a eliminat limitarea qrbox pentru a permite citirea de pe intreg ecranul, ideal pentru coduri lungi
+        videoConstraints: { deviceId: { exact: cameraId }, width: { ideal: 1920 }, height: { ideal: 1080 } }
+      },
       (decodedText, decodedResult) => {
-        // Cand gaseste un QR sau Cod de bare
         const formatName = (decodedResult && decodedResult.result && decodedResult.result.format && decodedResult.result.format.formatName) || 'Cod Standard';
         handleSuccessfulScan(decodedText, formatName);
       },
-      () => { /* Ignoram cadrele goale */ }
+      () => { }
     );
     
     running = true;
@@ -379,9 +366,8 @@ async function startScan() {
     btnStop.style.display = 'inline-block';
     cameraSelect.disabled = true;
     
-    setStatus('Scanare activa', 'Cauta coduri sau text... (Senzor Dual)', 'ok');
+    setStatus('Scanare activa', 'Senzorul proceseaza coduri si text...', 'ok');
     
-    // Declansam bucla de verificare a textului (OCR) in paralel
     processVideoFrameForOCR();
 
   } catch (err) {
@@ -391,7 +377,7 @@ async function startScan() {
 
 async function stopScan() {
   if (scanner && running) {
-    if (isPaused) scanner.resume(); // Trebuie reluat inainte de oprire din biblioteca
+    if (isPaused) scanner.resume();
     await scanner.stop();
     scanner.clear();
   }
@@ -404,22 +390,20 @@ async function stopScan() {
   btnStop.style.display = 'none';
   cameraSelect.disabled = false;
   resultSection.classList.remove('visible');
-  setStatus('Oprit', 'Scanarea a fost oprita manual.');
+  setStatus('Oprit', 'Scanarea a fost oprita.');
 }
 
-// 6. Gestionarea Butonului "URMATOAREA SCANARE" (Task 3)
 btnNextScan.addEventListener('click', () => {
   resultSection.classList.remove('visible');
   viewfinder.classList.remove('is-paused');
-  isPaused = false; // Deblocam sistemul
+  isPaused = false;
   
   if (scanner && running) {
-    scanner.resume(); // Repornim motorul de coduri de bare
+    scanner.resume();
     setStatus('Scanare activa', 'Se asteapta o noua eticheta...', 'ok');
   }
 });
 
-// Functie auxiliara pentru sunet
 function beep() {
   try {
     const ctx = new (window.AudioContext || window.webkitAudioContext)();
@@ -436,8 +420,8 @@ function beep() {
 btnStart.addEventListener('click', startScan);
 btnStop.addEventListener('click', stopScan);
 
-initCameras();
-initOCR();
+// Acum pornim sistemele secvential
+bootSystem();
 </script>
 </body>
 </html>
