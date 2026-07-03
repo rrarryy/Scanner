@@ -3,10 +3,10 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
-<title>Cititor Multi-Sistem — QR, Barcode & OCR</title>
+<title>Cititor Multi-Sistem — QR, Barcode &amp; OCR</title>
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/html5-qrcode/2.3.8/html5-qrcode.min.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js"></script>
+<!-- Tesseract NU se mai încarcă la pornire; îl aducem doar la prima apăsare pe OCR. -->
 
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -23,6 +23,7 @@
     --radius: 12px;
     --shadow: 0 1px 2px rgba(21,33,46,.06), 0 4px 16px rgba(21,33,46,.06);
     --sans: "Inter", Arial, sans-serif;
+    --mono: "SF Mono", "Cascadia Mono", Consolas, monospace;
   }
   * { box-sizing: border-box; margin: 0; padding: 0; }
   body { background: var(--bg); color: var(--ink); font-family: var(--sans); -webkit-font-smoothing: antialiased; min-height: 100vh; }
@@ -39,7 +40,7 @@
   .card-head h2 { font-size: 13px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.8px; color: var(--ink-soft); }
   .card-body { padding: 18px; }
 
-  .pill { font-size: 12px; font-weight: 600; padding: 4px 10px; border-radius: 999px; display: inline-flex; align-items: center; gap: 6px; background: var(--neutral-bg); color: var(--ink-soft); }
+  .pill { font-size: 12px; font-weight: 600; padding: 4px 10px; border-radius: 999px; display: inline-flex; align-items: center; gap: 6px; background: var(--neutral-bg); color: var(--ink-soft); white-space: nowrap; }
   .pill::before { content: ""; width: 7px; height: 7px; border-radius: 50%; background: currentColor; }
   .pill.ok { background: var(--success-bg); color: var(--success); }
   .pill.err { background: var(--danger-bg); color: var(--danger); }
@@ -47,40 +48,52 @@
 
   .viewfinder { position: relative; background: #0e1319; min-height: 300px; display: flex; align-items: center; justify-content: center; }
   #reader { width: 100%; }
-  
-  .paused-overlay { position: absolute; inset: 0; background: rgba(14,19,25,0.85); display: none; flex-direction: column; align-items: center; justify-content: center; color: white; z-index: 10; font-size: 14px; font-weight: 500; }
+  .viewfinder.mirror #reader video { transform: scaleX(-1); }
+
+  .paused-overlay { position: absolute; inset: 0; background: rgba(14,19,25,0.82); display: none; flex-direction: column; align-items: center; justify-content: center; color: white; z-index: 10; font-size: 14px; font-weight: 500; gap: 6px; text-align: center; padding: 20px; }
   .viewfinder.is-paused .paused-overlay { display: flex; }
 
   .placeholder { position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 8px; text-align: center; padding: 24px; color: #94a1b0; font-size: 13.5px; }
   .placeholder .icon { font-size: 30px; opacity: .8; }
 
-  .scanline { position: absolute; left: 0; right: 0; height: 2px; background: linear-gradient(90deg, transparent, #4da3ff, transparent); box-shadow: 0 0 10px 1px rgba(77,163,255,.5); animation: sweep 2.6s ease-in-out infinite; display: none; z-index: 5; }
+  .scanline { position: absolute; left: 4%; right: 4%; height: 2px; background: linear-gradient(90deg, transparent, #4da3ff, transparent); box-shadow: 0 0 10px 1px rgba(77,163,255,.5); animation: sweep 2.6s ease-in-out infinite; display: none; z-index: 5; }
   .viewfinder.active:not(.is-paused) .scanline { display: block; }
-  @keyframes sweep { 0%,100% { top: 5%; } 50% { top: 95%; } }
+  @keyframes sweep { 0%,100% { top: 8%; } 50% { top: 92%; } }
+  @media (prefers-reduced-motion: reduce) { .scanline { animation: none; top: 50%; } }
 
   .controls { display: flex; gap: 10px; flex-wrap: wrap; }
   select, button { font-family: var(--sans); font-size: 14px; font-weight: 500; border-radius: 8px; border: 1px solid var(--border); padding: 10px 14px; background: var(--surface); color: var(--ink); cursor: pointer; }
   select { flex: 1 1 220px; }
-  .btn-primary { background: var(--primary); border-color: var(--primary); color: #fff; font-weight: 600; flex: 1 1 150px; }
-  .btn-primary:disabled { opacity: .45; cursor: not-allowed; }
-  #btnStop { display: none; flex: 1 1 150px; color: var(--danger); border-color: var(--danger); font-weight: 600; }
+  button:disabled { opacity: .45; cursor: not-allowed; }
+  .btn-primary { background: var(--primary); border-color: var(--primary); color: #fff; font-weight: 600; flex: 1 1 130px; }
+  .btn-primary:disabled { opacity: .45; }
+  #btnStop { display: none; flex: 1 1 110px; color: var(--danger); border-color: var(--danger); font-weight: 600; }
+  #btnOcr { display: none; flex: 1 1 160px; color: var(--primary); border-color: var(--primary); font-weight: 600; }
+  #btnOcr:hover:not(:disabled) { background: #e8f0f8; }
+
+  .options-row { margin-top: 14px; padding-top: 14px; border-top: 1px solid var(--border); display: flex; align-items: center; justify-content: space-between; gap: 10px; flex-wrap: wrap; }
+  .switch { position: relative; display: inline-block; width: 42px; height: 24px; flex-shrink: 0; }
+  .switch input { opacity: 0; width: 0; height: 0; }
+  .switch .track { position: absolute; inset: 0; border-radius: 999px; background: #c9d2dc; transition: background .15s; cursor: pointer; }
+  .switch .track::after { content: ""; position: absolute; top: 3px; left: 3px; width: 18px; height: 18px; border-radius: 50%; background: #fff; box-shadow: 0 1px 2px rgba(0,0,0,.25); transition: transform .15s; }
+  .switch input:checked + .track { background: var(--primary); }
+  .switch input:checked + .track::after { transform: translateX(18px); }
 
   #resultSection { display: none; }
   #resultSection.visible { display: block; }
-  
-  .website-link-box { display: block; background: var(--primary); color: white; text-decoration: none; padding: 12px; border-radius: 8px; text-align: center; font-weight: 600; margin-bottom: 16px; font-size: 14px; }
+
+  .website-link-box { display: block; background: var(--primary); color: white; text-decoration: none; padding: 12px; border-radius: 8px; text-align: center; font-weight: 600; margin-bottom: 16px; font-size: 14px; word-break: break-word; }
   .website-link-box:hover { background: var(--primary-dk); }
-  
+  .website-link-box.search { background: var(--surface); color: var(--primary); border: 1px solid var(--primary); }
+
   .data-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; background: var(--neutral-bg); padding: 16px; border-radius: 8px; border: 1px solid var(--border); margin-bottom: 16px; }
   .data-item { display: flex; flex-direction: column; gap: 4px; }
   .data-label { font-size: 11px; text-transform: uppercase; color: var(--ink-soft); font-weight: 600; letter-spacing: 0.5px; }
   .data-value { font-size: 14px; font-weight: 500; color: var(--ink); word-break: break-all; }
   .data-item.full-width { grid-column: span 2; }
 
-  .btn-next-scan { width: 100%; background: var(--success); border-color: var(--success); color: white; padding: 14px; font-size: 16px; font-weight: 700; margin-top: 8px; box-shadow: 0 4px 6px rgba(21,127,77,0.2); transition: transform 0.1s; }
+  .btn-next-scan { width: 100%; background: var(--success); border-color: var(--success); color: white; padding: 14px; font-size: 16px; font-weight: 700; margin-top: 8px; box-shadow: 0 4px 6px rgba(21,127,77,0.2); transition: transform 0.1s; border-radius: 8px; cursor: pointer; }
   .btn-next-scan:active { transform: scale(0.98); }
-
-  .options-row { margin-top: 14px; padding-top: 14px; border-top: 1px solid var(--border); display: flex; align-items: center; justify-content: space-between; gap: 10px; }
 </style>
 </head>
 <body>
@@ -89,7 +102,7 @@
   <div class="logo">▦</div>
   <div>
     <h1>Cititor Industrial</h1>
-    <div class="tag">Coduri de bare · QR · OCR Text</div>
+    <div class="tag">Coduri de bare · QR · Data Matrix · OCR Text</div>
   </div>
 </div>
 
@@ -100,16 +113,16 @@
       <span class="pill" id="statusPill">In asteptare</span>
     </div>
 
-    <div class="viewfinder" id="viewfinder">
+    <div class="viewfinder mirror" id="viewfinder">
       <div id="reader"></div>
       <div class="placeholder" id="placeholder">
         <div class="icon">📷</div>
-        <div>Asteapta initializarea sistemelor...</div>
+        <div id="phText">Asteapta initializarea sistemelor...</div>
       </div>
       <div class="scanline"></div>
       <div class="paused-overlay">
         <div>Analiza oprita.</div>
-        <div style="font-size: 12px; font-weight: 400; opacity: 0.8; margin-top: 4px;">Datele au fost preluate cu succes.</div>
+        <div style="font-size: 12px; font-weight: 400; opacity: 0.8;">Datele au fost preluate — apasa „URMATOAREA SCANARE".</div>
       </div>
     </div>
 
@@ -118,6 +131,11 @@
         <select id="cameraSelect"></select>
         <button id="btnStart" class="btn-primary" disabled>Porneste</button>
         <button id="btnStop">Opreste</button>
+        <button id="btnOcr">Citeste text (OCR)</button>
+      </div>
+      <div class="options-row">
+        <span style="font-size: 13px; color: var(--ink-soft);">Imagine in oglinda <span style="opacity:.7">(camera frontala)</span></span>
+        <label class="switch"><input type="checkbox" id="mirrorToggle" checked><span class="track"></span></label>
       </div>
       <div class="options-row" style="border-top:none; padding-top:6px; margin-top:6px;">
         <span style="font-size: 12px; color: var(--ink-soft); font-weight: bold;" id="statusDetail">Incarcare...</span>
@@ -131,12 +149,12 @@
       <span class="pill ok" id="resultFormat">Tip Cod</span>
     </div>
     <div class="card-body">
-      <a href="#" target="_blank" class="website-link-box" id="websiteLink" style="display:none;">Deschide Website Producator ↗</a>
+      <a href="#" target="_blank" rel="noopener" class="website-link-box" id="websiteLink" style="display:none;">Deschide Website Producator ↗</a>
 
       <div class="data-grid">
         <div class="data-item full-width">
           <span class="data-label">Cod Brut Citit</span>
-          <span class="data-value" id="rawCodeValue" style="font-family: monospace;">-</span>
+          <span class="data-value" id="rawCodeValue" style="font-family: var(--mono);">-</span>
         </div>
         <div class="data-item">
           <span class="data-label">Producator</span>
@@ -148,7 +166,7 @@
         </div>
         <div class="data-item full-width">
           <span class="data-label">Data Fabricatie / Detalii</span>
-          <span class="data-value" id="infoDetalii">Nicio data suplimentara disponibila in baza de date.</span>
+          <span class="data-value" id="infoDetalii">Nicio data suplimentara disponibila.</span>
         </div>
       </div>
 
@@ -158,34 +176,19 @@
 </main>
 
 <script>
-const mockDatabase = {
-  "CS-PT1200": {
-    website: "https://www.industrial-sensors-example.com/cs-pt1200",
-    producator: "Sensors Tech International",
-    lot: "LOT-889-VX",
-    detalii: "Fabricat: 10 Ianuarie 2026. Transmitator de presiune."
-  },
-  "TTM-I4N-R-AB": {
-    website: "https://www.industrial-sensors-example.com/ttm-i4n",
-    producator: "Thermal Components Factory",
-    lot: "SERIA-R-AB-2026",
-    detalii: "Senzor modular avansat. Verificat functional."
-  },
-  "1234567890128": {
-    website: "https://www.example-manufacturer.ro",
-    producator: "Compania de Test S.A.",
-    lot: "LT-2026-X",
-    detalii: "Produs generic de testare sistem."
-  }
-};
-
+/* =====================================================================
+   [A] ELEMENTE & STARE
+   ===================================================================== */
 const cameraSelect = document.getElementById('cameraSelect');
 const btnStart = document.getElementById('btnStart');
 const btnStop = document.getElementById('btnStop');
+const btnOcr = document.getElementById('btnOcr');
 const statusPill = document.getElementById('statusPill');
 const statusDetail = document.getElementById('statusDetail');
 const viewfinder = document.getElementById('viewfinder');
 const placeholder = document.getElementById('placeholder');
+const phText = document.getElementById('phText');
+const mirrorToggle = document.getElementById('mirrorToggle');
 
 const resultSection = document.getElementById('resultSection');
 const resultFormat = document.getElementById('resultFormat');
@@ -207,229 +210,380 @@ function setStatus(pillText, detailText, kind) {
   statusDetail.textContent = detailText || '—';
 }
 
+mirrorToggle.addEventListener('change', () => {
+  viewfinder.classList.toggle('mirror', mirrorToggle.checked);
+});
+
+const FORMATS = [
+  Html5QrcodeSupportedFormats.QR_CODE, Html5QrcodeSupportedFormats.DATA_MATRIX,
+  Html5QrcodeSupportedFormats.AZTEC, Html5QrcodeSupportedFormats.PDF_417,
+  Html5QrcodeSupportedFormats.EAN_13, Html5QrcodeSupportedFormats.EAN_8,
+  Html5QrcodeSupportedFormats.UPC_A, Html5QrcodeSupportedFormats.UPC_E,
+  Html5QrcodeSupportedFormats.CODE_128, Html5QrcodeSupportedFormats.CODE_39,
+  Html5QrcodeSupportedFormats.ITF
+];
+
+/* =====================================================================
+   [B] INTERPRETORUL DE CODURI (înlocuiește mockDatabase)
+   ===================================================================== */
+const BRANDS = [
+  { re: /PANASONIC|MATSUSHITA/i, name: 'Panasonic', url: 'https://industrial.panasonic.com' },
+  { re: /EATON|MOELLER/i, name: 'Eaton', url: 'https://www.eaton.com' },
+  { re: /SIEMENS/i, name: 'Siemens', url: 'https://www.siemens.com' },
+  { re: /SCHNEIDER|TELEMECANIQUE/i, name: 'Schneider Electric', url: 'https://www.se.com' },
+  { re: /\bABB\b/i, name: 'ABB', url: 'https://www.abb.com' },
+  { re: /OMRON/i, name: 'Omron', url: 'https://www.omron.com' },
+  { re: /PHOENIX\s*CONTACT/i, name: 'Phoenix Contact', url: 'https://www.phoenixcontact.com' },
+  { re: /FESTO/i, name: 'Festo', url: 'https://www.festo.com' },
+  { re: /\bSICK\b/i, name: 'SICK', url: 'https://www.sick.com' },
+  { re: /WEIDM/i, name: 'Weidmüller', url: 'https://www.weidmueller.com' },
+  { re: /\bWAGO\b/i, name: 'WAGO', url: 'https://www.wago.com' },
+  { re: /RITTAL/i, name: 'Rittal', url: 'https://www.rittal.com' },
+  { re: /LEGRAND/i, name: 'Legrand', url: 'https://www.legrand.com' },
+  { re: /FINDER/i, name: 'Finder', url: 'https://www.findernet.com' },
+  { re: /LOVATO/i, name: 'Lovato Electric', url: 'https://www.lovatoelectric.com' },
+  { re: /MEAN\s*WELL/i, name: 'Mean Well', url: 'https://www.meanwell.com' }
+];
+const PART_HINTS = [
+  { re: /^AFP/i, name: 'Panasonic', url: 'https://industrial.panasonic.com' },
+  { re: /^(PKZM|PKE|DILM|DILA|NZM|FAZ|EMT6|ETR)/i, name: 'Eaton', url: 'https://www.eaton.com' },
+  { re: /^(3RV|3RT|3SU|3SB|6ES|6EP|5SL|5SY)/i, name: 'Siemens', url: 'https://www.siemens.com' },
+  { re: /^(LC1|LC2|LRD|GV2|GV3|A9F|A9N|iC60|XB4|XB5|RXM)/i, name: 'Schneider Electric', url: 'https://www.se.com' },
+  { re: /^(CJ1|CJ2|CP1|MY2|MY4|G2R|E3Z)/i, name: 'Omron', url: 'https://www.omron.com' }
+];
+const MH10_DI = { '1P':'Cod produs (producător)','2P':'Revizie produs','P':'Cod produs (client)','Q':'Cantitate','1T':'Lot fabricație','T':'Lot fabricație','S':'Număr de serie','1S':'Număr de serie','4L':'Țara de origine','16D':'Data fabricației','9D':'Dată','6D':'Dată','D':'Dată','1V':'Producător (ID)','V':'Producător (ID)','K':'Comandă / ordin' };
+const MH10_KEYS = Object.keys(MH10_DI).sort((a,b)=>b.length-a.length);
+const COUNTRIES = { JP:'Japonia',DE:'Germania',CN:'China',US:'SUA',RO:'România',IT:'Italia',FR:'Franța',GB:'Marea Britanie',PL:'Polonia',CZ:'Cehia',HU:'Ungaria',TR:'Turcia',KR:'Coreea de Sud',TW:'Taiwan',NL:'Olanda',CH:'Elveția',AT:'Austria',ES:'Spania',SE:'Suedia',BE:'Belgia',IN:'India',MX:'Mexic' };
+
+function gs1Country(ean) {
+  const p = parseInt(ean.substring(0,3),10);
+  const R = [[0,139,'SUA / Canada'],[300,379,'Franța'],[380,380,'Bulgaria'],[383,383,'Slovenia'],[385,385,'Croația'],[400,440,'Germania'],[450,459,'Japonia'],[460,469,'Rusia'],[471,471,'Taiwan'],[489,489,'Hong Kong'],[490,499,'Japonia'],[500,509,'Marea Britanie'],[520,521,'Grecia'],[540,549,'Belgia / Luxemburg'],[560,560,'Portugalia'],[570,579,'Danemarca'],[590,590,'Polonia'],[594,594,'România'],[599,599,'Ungaria'],[640,649,'Finlanda'],[690,699,'China'],[700,709,'Norvegia'],[730,739,'Suedia'],[760,769,'Elveția'],[800,839,'Italia'],[840,849,'Spania'],[858,858,'Slovacia'],[859,859,'Cehia'],[860,860,'Serbia'],[868,869,'Turcia'],[870,879,'Olanda'],[880,881,'Coreea de Sud'],[885,885,'Thailanda'],[890,890,'India'],[893,893,'Vietnam'],[900,919,'Austria'],[930,939,'Australia'],[955,955,'Malaezia']];
+  for (const [a,b,name] of R) if (p>=a && p<=b) return name;
+  return null;
+}
+function decodeYYMMDD(s) {
+  if (!/^\d{6}$/.test(s)) return null;
+  const yy=s.substring(0,2), mm=parseInt(s.substring(2,4),10), dd=parseInt(s.substring(4,6),10);
+  if (mm<1||mm>12||dd<1||dd>31) return null;
+  return s.substring(4,6)+'.'+s.substring(2,4)+'.20'+yy;
+}
+function parseMH10(text) {
+  const parts = text.split(/[;\u001d\u001e]+/).map(s=>s.trim()).filter(Boolean);
+  if (parts.length < 2) return null;
+  const fields=[]; let matched=0, productCode=null;
+  for (const part of parts) {
+    const di = MH10_KEYS.find(k=>part.startsWith(k) && part.length>k.length);
+    if (!di) { fields.push({k:'Câmp nerecunoscut',v:part}); continue; }
+    matched++;
+    let val = part.substring(di.length), label = MH10_DI[di];
+    if (di==='4L' && COUNTRIES[val]) val = COUNTRIES[val]+' ('+val+')';
+    if (di==='1T'||di==='T') { const d=decodeYYMMDD(val); if(d) val=val+'  (probabil '+d+')'; }
+    if (di==='16D'||di==='9D'||di==='6D'||di==='D') { const d=decodeYYMMDD(val); if(d) val=d; }
+    if (di==='1P'||di==='P') productCode = productCode || part.substring(di.length);
+    fields.push({k:label,v:val});
+  }
+  if (matched < 2) return null;
+  return { fields, productCode, standard:'ANSI MH10.8.2 (etichetă industrială)' };
+}
+function parseGS1(text) {
+  const AI = {'01':['GTIN (cod global produs)',14],'10':['Lot fabricație',0],'11':['Data fabricației',6],'13':['Data ambalării',6],'15':['Valabil până la',6],'17':['Data expirării',6],'21':['Număr de serie',0],'30':['Cantitate',0]};
+  const fields=[];
+  const paren = text.match(/\((\d{2,4})\)([^\(]*)/g);
+  if (paren && paren.length>=1) {
+    for (const seg of paren) {
+      const m = seg.match(/\((\d{2,4})\)(.*)/);
+      const ai=m[1], val=m[2].trim(), def=AI[ai];
+      let label = def?def[0]:'AI '+ai, v=val;
+      if (def && def[1]===6) { const d=decodeYYMMDD(val); if(d) v=d; }
+      fields.push({k:label,v:v});
+    }
+    return { fields, standard:'GS1' };
+  }
+  return null;
+}
+function analyzeCode(text, formatName) {
+  const fields=[]; let productCode=null, standard=null, website=null, brandName=null;
+  if (/^https?:\/\//i.test(text)) {
+    try { website={name:new URL(text).hostname,url:text,direct:true}; fields.push({k:'Tip conținut',v:'Link web'}); } catch(e){}
+  }
+  if (!website) { const mh=parseMH10(text); if(mh){ fields.push(...mh.fields); productCode=mh.productCode; standard=mh.standard; } }
+  if (!standard && !website) { const gs=parseGS1(text); if(gs){ fields.push(...gs.fields); standard=gs.standard; } }
+  if (/^(EAN_13|EAN_8|UPC_A|UPC_E)$/.test(formatName) && /^\d{7,14}$/.test(text)) {
+    standard='GS1 '+formatName.replace('_','-');
+    fields.push({k:'GTIN (cod global produs)',v:text});
+    const c=gs1Country(text.padStart(13,'0')); if(c) fields.push({k:'Țara de înregistrare a producătorului',v:c});
+  }
+  if (fields.length===0) { productCode=text.trim(); fields.push({k:'Cod identificat',v:productCode}); }
+  if (standard) fields.unshift({k:'Standard detectat',v:standard});
+  let brand = BRANDS.find(b=>b.re.test(text));
+  if (!brand && productCode) brand = PART_HINTS.find(b=>b.re.test(productCode));
+  if (brand) { brandName=brand.name; if(!website) website={name:brand.name+' — site oficial',url:brand.url,direct:true}; }
+  if (!website) {
+    const q = encodeURIComponent((productCode||text).substring(0,80)+' producator datasheet');
+    website={name:'Caută producătorul acestei piese ↗',url:'https://www.google.com/search?q='+q,direct:false};
+  }
+  return { fields, website, brandName, productCode, isUrl:/^https?:\/\//i.test(text) };
+}
+
+/* =====================================================================
+   [C] PORNIRE, SCANARE, PAUZĂ
+   ===================================================================== */
 async function initCameras() {
   try {
     const devices = await Html5Qrcode.getCameras();
-    if (devices && devices.length > 0) {
-      devices.forEach((d, i) => {
-        const opt = document.createElement('option');
-        opt.value = d.id;
-        opt.textContent = d.label || ('Camera ' + (i + 1));
-        cameraSelect.appendChild(opt);
-      });
+    if (devices && devices.length>0) {
+      cameraSelect.innerHTML='';
+      devices.forEach((d,i)=>{ const o=document.createElement('option'); o.value=d.id; o.textContent=d.label||('Camera '+(i+1)); cameraSelect.appendChild(o); });
       return true;
     }
-  } catch (err) {
-    console.warn("Eroare initializare camere:", err);
-  }
+  } catch (err) { console.warn('Camere:', err); }
   return false;
 }
 
-async function initOCR() {
-  try {
-    ocrWorker = await Tesseract.createWorker('eng');
-    return true;
-  } catch (error) {
-    console.error("Tesseract Init Error:", error);
-    return false;
-  }
-}
-
 async function bootSystem() {
-  btnStart.disabled = true;
-  
-  setStatus('Pasul 1/2', 'Se detecteaza camerele...', 'warn');
-  const camsFound = await initCameras();
-  
-  if (!camsFound) {
-    setStatus('Eroare', 'Nicio camera detectata sau acces refuzat.', 'err');
+  if (location.protocol === 'file:') {
+    setStatus('Blocat','Fișier deschis direct (file://). Folosește adresa http(s), nu dublu-click.','err');
     return;
   }
-
-  setStatus('Pasul 2/2', 'Se descarca motorul AI pentru text (OCR)...', 'warn');
-  const ocrReady = await initOCR();
-
-  if (ocrReady) {
-    setStatus('Pregatit', 'Toate sistemele sunt gata de scanare.', 'ok');
-    document.querySelector('#placeholder div:last-child').textContent = 'Alege camera si apasa "Porneste".';
-    btnStart.disabled = false;
-  } else {
-    setStatus('Partial Pregatit', 'Motorul de text a dat eroare. Doar codurile de bare vor functiona.', 'warn');
-    document.querySelector('#placeholder div:last-child').textContent = 'Alege camera si apasa "Porneste".';
-    btnStart.disabled = false;
-  }
-}
-
-function handleSuccessfulScan(codCitit, sursa) {
-  if (isPaused) return;
-  
-  isPaused = true;
-  if (scanner) scanner.pause(true);
-  
-  viewfinder.classList.add('is-paused');
-  beep();
-  if (navigator.vibrate) navigator.vibrate([100, 50, 100]);
-
-  resultFormat.textContent = "Detectat prin: " + sursa;
-  rawCodeValue.textContent = codCitit;
-  
-  const searchKey = codCitit.trim().toUpperCase();
-  const dateGasite = mockDatabase[searchKey];
-
-  if (dateGasite) {
-    infoProducator.textContent = dateGasite.producator;
-    infoLot.textContent = dateGasite.lot;
-    infoDetalii.textContent = dateGasite.detalii;
-    
-    if (dateGasite.website) {
-      websiteLink.href = dateGasite.website;
-      websiteLink.style.display = 'block';
-    } else {
-      websiteLink.style.display = 'none';
-    }
-  } else {
-    infoProducator.textContent = "Necunoscut";
-    infoLot.textContent = "Necunoscut";
-    infoDetalii.textContent = "Codul nu este inregistrat in sistem. Este necesara introducerea manuala.";
-    websiteLink.style.display = 'none';
-    
-    if (/^https?:\/\//i.test(codCitit)) {
-      websiteLink.href = codCitit;
-      websiteLink.textContent = "Deschide Link-ul Direct ↗";
-      websiteLink.style.display = 'block';
-    }
-  }
-
-  resultSection.classList.add('visible');
-  setStatus('Pauza', 'Analiza oprita. Verifica rezultatele afisate.', 'warn');
-  resultSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
-}
-
-async function processVideoFrameForOCR() {
-  if (!running || isPaused || !ocrWorker) {
-    setTimeout(processVideoFrameForOCR, 1000);
-    return;
-  }
-
-  const videoElement = document.querySelector('#reader video');
-  if (videoElement && videoElement.readyState === videoElement.HAVE_ENOUGH_DATA) {
-    try {
-      // METODA NOUA: Creare element canvas pentru a realiza o "fotografie" clara a cadrului
-      const canvas = document.createElement('canvas');
-      canvas.width = videoElement.videoWidth;
-      canvas.height = videoElement.videoHeight;
-      const ctx = canvas.getContext('2d');
-      ctx.drawImage(videoElement, 0, 0, canvas.width, canvas.height);
-
-      // Trimitem fotografia statica catre motorul AI, nu fluxul video live
-      const result = await ocrWorker.recognize(canvas);
-      const text = result.data.text;
-      
-      // ALGORITM ACTUALIZAT: Permite litere mici/mari si ORICATE cratime intre ele
-      // Aceasta va gasi si "CS-PT1200", dar si "TTM-i4N-R-AB"
-      const regexTiparIndustrial = /[a-zA-Z0-9]{2,}(?:-[a-zA-Z0-9]+)+/g;
-      const meciuri = text.match(regexTiparIndustrial);
-
-      if (meciuri && meciuri.length > 0) {
-        handleSuccessfulScan(meciuri[0], "Text OCR (AI)");
-        return;
-      }
-    } catch (err) {
-      console.warn("Eroare cadru OCR", err);
-    }
-  }
-  
-  // Repetam procedura o data la 1.5 secunde pentru a evita blocajele de procesor
-  setTimeout(processVideoFrameForOCR, 1500);
+  setStatus('Initializare','Se detecteaza camerele...','warn');
+  const ok = await initCameras();
+  if (!ok) { setStatus('Eroare','Nicio camera detectata sau acces refuzat.','err'); return; }
+  setStatus('Pregatit','Alege camera si apasa „Porneste".','ok');
+  phText.textContent = 'Alege camera si apasa „Porneste".';
+  btnStart.disabled = false;
 }
 
 async function startScan() {
   const cameraId = cameraSelect.value;
   if (!cameraId) return;
 
-  const formatsToSupport = [
-    Html5QrcodeSupportedFormats.QR_CODE, Html5QrcodeSupportedFormats.DATA_MATRIX,
-    Html5QrcodeSupportedFormats.AZTEC, Html5QrcodeSupportedFormats.PDF_417,
-    Html5QrcodeSupportedFormats.EAN_13, Html5QrcodeSupportedFormats.EAN_8,
-    Html5QrcodeSupportedFormats.UPC_A, Html5QrcodeSupportedFormats.UPC_E,
-    Html5QrcodeSupportedFormats.CODE_128, Html5QrcodeSupportedFormats.CODE_39,
-    Html5QrcodeSupportedFormats.ITF
-  ];
+  scanner = new Html5Qrcode('reader', {
+    formatsToSupport: FORMATS,
+    experimentalFeatures: { useBarCodeDetectorIfSupported: true }
+  });
 
-  scanner = new Html5Qrcode('reader', { formatsToSupport: formatsToSupport, experimentalFeatures: { useBarCodeDetectorIfSupported: true } });
+  // qrbox LAT (pentru coduri de bare) dar și înalt (pentru QR/DataMatrix).
+  const config = {
+    fps: 10,
+    qrbox: function (w, h) {
+      const width = Math.floor(Math.min(w * 0.92, 640));
+      const height = Math.floor(Math.min(h * 0.75, width));
+      return { width: width, height: height };
+    },
+    videoConstraints: {
+      deviceId: { exact: cameraId },
+      width: { ideal: 2560 }, height: { ideal: 1440 },
+      advanced: [{ focusMode: 'continuous' }]   // autofocus, ignorat dacă nu e suportat
+    }
+  };
 
   try {
-    await scanner.start(
-      cameraId,
-      { fps: 15, videoConstraints: { deviceId: { exact: cameraId }, width: { ideal: 1920 }, height: { ideal: 1080 } } },
+    await scanner.start(cameraId, config,
       (decodedText, decodedResult) => {
-        const formatName = (decodedResult && decodedResult.result && decodedResult.result.format && decodedResult.result.format.formatName) || 'Cod Standard';
-        handleSuccessfulScan(decodedText, formatName);
+        const fmt = (decodedResult && decodedResult.result && decodedResult.result.format && decodedResult.result.format.formatName) || 'Cod Standard';
+        handleSuccessfulScan(decodedText, fmt);
       },
-      () => { }
+      () => {}
     );
-    
-    running = true;
-    isPaused = false;
+    running = true; isPaused = false;
     viewfinder.classList.add('active');
     placeholder.style.display = 'none';
     btnStart.style.display = 'none';
     btnStop.style.display = 'inline-block';
+    btnOcr.style.display = 'inline-block';
     cameraSelect.disabled = true;
-    
-    setStatus('Scanare activa', 'Senzorul proceseaza coduri si text...', 'ok');
-    
-    processVideoFrameForOCR();
-
+    setStatus('Scanare activa','Se citeste O SINGURA data, apoi asteapta butonul „URMATOAREA SCANARE".','ok');
   } catch (err) {
-    setStatus('Eroare', 'Camera nu a pornit: ' + err, 'err');
+    setStatus('Eroare','Camera nu a pornit: '+err,'err');
+    scanner = null;
   }
 }
 
 async function stopScan() {
-  if (scanner && running) {
-    if (isPaused) scanner.resume();
-    await scanner.stop();
-    scanner.clear();
-  }
-  running = false;
-  isPaused = false;
-  viewfinder.classList.remove('active');
-  viewfinder.classList.remove('is-paused');
-  placeholder.style.display = 'flex';
-  btnStart.style.display = 'inline-block';
-  btnStop.style.display = 'none';
-  cameraSelect.disabled = false;
+  if (scanner && running) { try { if(isPaused) scanner.resume(); await scanner.stop(); scanner.clear(); } catch(e){} }
+  scanner=null; running=false; isPaused=false;
+  viewfinder.classList.remove('active','is-paused');
+  placeholder.style.display='flex';
+  btnStart.style.display='inline-block';
+  btnStop.style.display='none';
+  btnOcr.style.display='none';
+  cameraSelect.disabled=false;
   resultSection.classList.remove('visible');
-  setStatus('Oprit', 'Scanarea a fost oprita.');
+  setStatus('Oprit','Scanarea a fost oprita.');
+}
+
+// O singură citire, apoi pauză controlată (Punctul 3)
+function handleSuccessfulScan(codCitit, sursa) {
+  if (isPaused) return;         // pe o etichetă cu mai multe coduri: primul câștigă
+  isPaused = true;
+  if (scanner) { try { scanner.pause(true); } catch(e){} }
+  viewfinder.classList.add('is-paused');
+  btnOcr.disabled = true;
+  beep();
+  if (navigator.vibrate) navigator.vibrate([100,50,100]);
+  showResult(codCitit, sursa);
 }
 
 btnNextScan.addEventListener('click', () => {
   resultSection.classList.remove('visible');
   viewfinder.classList.remove('is-paused');
   isPaused = false;
-  
-  if (scanner && running) {
-    scanner.resume();
-    setStatus('Scanare activa', 'Se asteapta o noua eticheta...', 'ok');
-  }
+  btnOcr.disabled = false;
+  if (scanner && running) { try { scanner.resume(); } catch(e){} setStatus('Scanare activa','Se asteapta o noua eticheta...','ok'); }
 });
+
+/* =====================================================================
+   [D] OCR — LA CERERE (nu în buclă!), cu preprocesare și scor
+   ===================================================================== */
+function loadScript(src) {
+  return new Promise((res, rej) => {
+    const s = document.createElement('script');
+    s.src=src; s.onload=res; s.onerror=()=>rej(new Error('Nu am putut încărca '+src));
+    document.head.appendChild(s);
+  });
+}
+
+// Alb-negru cu contrast mărit — Tesseract citește mult mai bine
+function preprocess(srcCanvas) {
+  const ctx = srcCanvas.getContext('2d');
+  const img = ctx.getImageData(0,0,srcCanvas.width,srcCanvas.height);
+  const d = img.data;
+  for (let i=0;i<d.length;i+=4) {
+    let g = 0.299*d[i] + 0.587*d[i+1] + 0.114*d[i+2];
+    g = (g-128)*1.5 + 128;          // creștem contrastul
+    g = g<0?0:g>255?255:g;
+    d[i]=d[i+1]=d[i+2]=g;
+  }
+  ctx.putImageData(img,0,0);
+  return srcCanvas;
+}
+
+async function runOcr() {
+  const video = document.querySelector('#reader video');
+  if (!video || !video.videoWidth) { setStatus('Atentie','Porneste mai intai scanarea.','err'); return; }
+
+  // 1) Captură + decupaj central (elimină fundalul) + preprocesare
+  const cw = video.videoWidth, ch = video.videoHeight;
+  const cropW = Math.floor(cw*0.9), cropH = Math.floor(ch*0.6);
+  const sx = Math.floor((cw-cropW)/2), sy = Math.floor((ch-cropH)/2);
+  const canvas = document.createElement('canvas');
+  canvas.width = cropW*2; canvas.height = cropH*2;   // upscale 2x
+  const cx = canvas.getContext('2d');
+  cx.imageSmoothingEnabled = true;
+  cx.drawImage(video, sx, sy, cropW, cropH, 0, 0, canvas.width, canvas.height);
+  preprocess(canvas);
+
+  handleSuccessfulScan.length; // noop
+  if (!isPaused && scanner && running) { try { scanner.pause(true);} catch(e){} isPaused=true; viewfinder.classList.add('is-paused'); }
+  btnOcr.disabled = true;
+  const old = btnOcr.textContent;
+
+  try {
+    if (!window.Tesseract) {
+      setStatus('OCR','Se incarca motorul OCR (prima data ~10-20 s)...','warn');
+      await loadScript('https://cdnjs.cloudflare.com/ajax/libs/tesseract.js/5.1.0/tesseract.min.js');
+    }
+    if (!ocrWorker) {
+      setStatus('OCR','Se pregateste recunoasterea de text...','warn');
+      ocrWorker = await Tesseract.createWorker('eng');
+      try { await ocrWorker.setParameters({ tessedit_pageseg_mode: '6' }); } catch(e){}
+    }
+    setStatus('OCR','Se citeste textul din imagine...','warn');
+    btnOcr.textContent = 'Se citeste...';
+
+    const { data } = await ocrWorker.recognize(canvas);
+    const code = extractPartCode(data.text || '');
+
+    if (code) {
+      showResult(code, 'TEXT (OCR)');
+    } else {
+      const t = (data.text||'').trim();
+      if (t) { showResult(t.substring(0,300), 'TEXT (OCR)'); setStatus('In pauza','Nu am gasit un cod clar — am afisat textul citit.','warn'); }
+      else { setStatus('OCR','Nu am putut citi text. Apropie eticheta, lumina buna, reincearca.','err'); resumeAfterFailedOcr(); }
+    }
+  } catch (err) {
+    setStatus('Eroare OCR', String(err), 'err');
+    resumeAfterFailedOcr();
+  } finally {
+    btnOcr.textContent = old;
+    if (!isPaused) btnOcr.disabled = false;
+  }
+}
+
+function resumeAfterFailedOcr() {
+  if (scanner && running && isPaused) { try { scanner.resume(); } catch(e){} isPaused=false; viewfinder.classList.remove('is-paused'); btnOcr.disabled=false; }
+}
+
+// Alege cel mai probabil cod de piesă (ex.: CS-PT1200), respinge marcaje (CE, UL...)
+function extractPartCode(text) {
+  const up = (text||'').toUpperCase();
+  const cands = new Set();
+  (up.match(/[A-Z0-9]{1,6}[-–][A-Z0-9]{2,14}(?:[-–][A-Z0-9]+)*/g)||[]).forEach(c=>cands.add(c.replace(/–/g,'-')));
+  (up.match(/\b[A-Z]{2,6}\d{2,10}[A-Z0-9]*\b/g)||[]).forEach(c=>cands.add(c));
+  const BAD = /^(CE|UL|CSA|UKCA|MSIP|ROHS|RO|EAN|ISO|IEC|REACH|MADE|PC|QTY|CAT|TYPE|SN|LOT)$/;
+  let best=null, bestScore=-1;
+  cands.forEach(c=>{
+    let s=0;
+    if (c.includes('-')) s+=3;
+    if (/\d{2,}/.test(c)) s+=2;
+    if (c.length>=6 && c.length<=16) s+=1;
+    if (PART_HINTS.some(h=>h.re.test(c)) || /^AFPX/.test(c)) s+=4;
+    if (BAD.test(c)) s-=8;
+    if (s>bestScore) { bestScore=s; best=c; }
+  });
+  return bestScore>=3 ? best : null;
+}
+
+/* =====================================================================
+   [E] AFIȘARE în grila existentă
+   ===================================================================== */
+function showResult(text, sursa) {
+  const a = analyzeCode(text, sursa);
+
+  resultFormat.textContent = 'Detectat: ' + sursa;
+  rawCodeValue.textContent = text;
+
+  // Website-ul, primul (Punctul 4)
+  websiteLink.textContent = a.website.direct ? ('Deschide: ' + a.website.name + ' ↗') : a.website.name;
+  websiteLink.href = a.website.url;
+  websiteLink.className = 'website-link-box' + (a.website.direct ? '' : ' search');
+  websiteLink.style.display = 'block';
+
+  // Mapăm câmpurile interpretorului în grilă
+  infoProducator.textContent = a.brandName || 'Neidentificat';
+  let lot='—', dataFab=null; const rest=[];
+  a.fields.forEach(f=>{
+    if (/lot|serie/i.test(f.k) && lot==='—') { lot=f.v; return; }
+    if (/dat[ăa]/i.test(f.k) && !dataFab) { dataFab=f.v; return; }
+    if (/tip conținut/i.test(f.k)) return;
+    rest.push(f.k+': '+f.v);
+  });
+  infoLot.textContent = lot;
+  const det = [];
+  if (dataFab) det.push('Fabricație: '+dataFab);
+  rest.forEach(r=>det.push(r));
+  infoDetalii.textContent = det.length ? det.join('  ·  ') : 'Nicio informație suplimentară în cod.';
+
+  resultSection.classList.add('visible');
+  if (!/Nu am gasit|am afisat textul/.test(statusDetail.textContent)) setStatus('In pauza','Rezultat afisat. Apasa „URMATOAREA SCANARE".','warn');
+  resultSection.scrollIntoView({ behavior:'smooth', block:'start' });
+}
 
 function beep() {
   try {
-    const ctx = new (window.AudioContext || window.webkitAudioContext)();
-    const osc = ctx.createOscillator();
-    const gain = ctx.createGain();
-    osc.type = 'square'; osc.frequency.value = 1000;
+    const ctx = new (window.AudioContext||window.webkitAudioContext)();
+    const osc = ctx.createOscillator(); const gain = ctx.createGain();
+    osc.type='square'; osc.frequency.value=1000;
     gain.gain.setValueAtTime(0.1, ctx.currentTime);
-    gain.gain.exponentialRampToValueAtTime(0.0001, ctx.currentTime + 0.1);
+    gain.gain.exponentialRampToValueAtTime(0.0001, ctx.currentTime+0.1);
     osc.connect(gain).connect(ctx.destination);
-    osc.start(); osc.stop(ctx.currentTime + 0.1);
-  } catch (e) { }
+    osc.start(); osc.stop(ctx.currentTime+0.1);
+  } catch(e){}
 }
 
 btnStart.addEventListener('click', startScan);
 btnStop.addEventListener('click', stopScan);
+btnOcr.addEventListener('click', runOcr);
 
 bootSystem();
 </script>
