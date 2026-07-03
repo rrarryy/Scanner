@@ -43,6 +43,9 @@
   #reader { width: 100%; height: 100%; display: flex; align-items: center; justify-content: center; }
   #reader video { object-fit: cover !important; min-height: 100%; min-width: 100%; }
   .viewfinder.mirror #reader video { transform: scaleX(-1); }
+
+  /* Ascunde liniile grafice default ale librariei html5-qrcode */
+  #qr-shaded-region { display: none !important; }
   
   .paused-overlay { position: absolute; inset: 0; background: rgba(14,19,25,0.82); display: none; flex-direction: column; align-items: center; justify-content: center; color: white; z-index: 10; font-size: 14px; font-weight: 500; gap: 6px; text-align: center; padding: 20px; }
   .viewfinder.is-paused .paused-overlay { display: flex; }
@@ -65,7 +68,6 @@
   
   .options-row { margin-top: 10px; padding-top: 10px; border-top: 1px solid var(--border); display: flex; align-items: center; justify-content: space-between; gap: 10px; flex-wrap: wrap; }
 
-  /* PREVIZUALIZARE ZONĂ SCANARE - Linie punctată curată, colțuri invizibile */
   .box-preview {
     position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);
     border: 2px dashed rgba(77,163,255,.9); border-radius: 6px;
@@ -73,7 +75,6 @@
     pointer-events: none; 
     display: none;
   }
-  /* Acestea sunt zonele de tragere - invizibile, dar funcționale și mai mari pentru touch */
   .resize-handle {
     position: absolute; width: 44px; height: 44px;
     background: transparent; border: none; box-shadow: none; z-index: 7;
@@ -131,7 +132,6 @@
       </div>
       <div class="scanline"></div>
       <div class="box-preview" id="boxPreview">
-         <!-- Colțurile sunt acum transparente -->
          <div class="resize-handle rh-tl"></div>
          <div class="resize-handle rh-tr"></div>
          <div class="resize-handle rh-bl"></div>
@@ -149,7 +149,7 @@
         <button id="btnStop">Opreste</button>
         <button id="btnOcr">Citeste text (OCR)</button>
       </div>
-      <div class="drag-hint" id="dragHint" style="display:none;">Trage de colțurile liniei punctate pentru a ajusta zona de scanare.</div>
+      <div class="drag-hint" id="dragHint" style="display:none;">Trage de colturile liniei punctate pentru a ajusta zona de scanare.</div>
       <div class="options-row" style="border-top:none; padding-top:6px; margin-top:10px;">
         <span style="font-size: 12px; color: var(--ink-soft); font-weight: bold;" id="statusDetail">Incarcare...</span>
       </div>
@@ -162,20 +162,20 @@
     </div>
     <div class="card-body">
       <a href="#" target="_blank" rel="noopener" class="website-link-box" id="websiteLink" style="display:none;">Deschide Website Producator ↗</a>
-      <button class="btn-online" id="btnOnlineInfo" style="display:none;">🌐 Caută descriere online (experimental)</button>
+      <button class="btn-online" id="btnOnlineInfo" style="display:none;">🌐 Cauta descriere online (experimental)</button>
       <div class="online-blurb" id="onlineBlurb">
         <span class="tag-exp">Neverificat</span>
         <div id="onlineBlurbText"></div>
       </div>
       <div class="data-grid">
         <div class="data-item full-width">
-          <span class="data-label">Cod Brut Citit <span style="font-weight:400; opacity:.75;">(editabil — corectează aici dacă OCR a greșit)</span></span>
+          <span class="data-label">Cod Brut Citit <span style="font-weight:400; opacity:.75;">(editabil — corecteaza aici daca OCR a gresit)</span></span>
           <div class="raw-edit-row">
             <input type="text" id="rawCodeInput" value="" spellcheck="false">
-            <button id="btnRecalc">Recalculează</button>
+            <button id="btnRecalc">Recalculeaza</button>
           </div>
-          <div class="field-hint" id="ocrMemoryLabel">Corectări memorate pe acest telefon: 0</div>
-          <div class="field-hint" style="margin-top:-10px;"><a href="#" id="btnClearOcrMemory" style="color:var(--primary);">Șterge memoria de corectări</a></div>
+          <div class="field-hint" id="ocrMemoryLabel">Corectari memorate pe acest telefon: 0</div>
+          <div class="field-hint" style="margin-top:-10px;"><a href="#" id="btnClearOcrMemory" style="color:var(--primary);">Sterge memoria de corectari</a></div>
         </div>
         <div class="data-item">
           <span class="data-label">Producator</span>
@@ -190,7 +190,7 @@
           <span class="data-value" id="infoDetalii">Nicio data suplimentara disponibila.</span>
         </div>
         <div class="data-item full-width" id="infoDomeniuRow" style="display:none;">
-          <span class="data-label">Domeniu producător</span>
+          <span class="data-label">Domeniu producator</span>
           <span class="data-value" id="infoDomeniu">—</span>
         </div>
       </div>
@@ -258,21 +258,21 @@ const FORMATS = [
    [B] INTERPRETORUL DE CODURI 
    ===================================================================== */
 const BRANDS = [
-  { re: /PANASONIC|MATSUSHITA/i, name: 'Panasonic', url: 'https://industrial.panasonic.com', domeniu: 'Automatizări industriale, PLC-uri, componente electronice și senzori' },
-  { re: /EATON|MOELLER/i, name: 'Eaton', url: 'https://www.eaton.com', domeniu: 'Echipamente electrice: întrerupătoare, contactoare, protecții pentru motoare' },
-  { re: /SIEMENS/i, name: 'Siemens', url: 'https://www.siemens.com', domeniu: 'Automatizări industriale, PLC-uri, echipamente electrice și energie' },
-  { re: /SCHNEIDER|TELEMECANIQUE/i, name: 'Schneider Electric', url: 'https://www.se.com', domeniu: 'Gestionarea energiei și automatizări industriale' },
-  { re: /\bABB\b/i, name: 'ABB', url: 'https://www.abb.com', domeniu: 'Robotică, automatizări industriale și echipamente electrice' },
-  { re: /OMRON/i, name: 'Omron', url: 'https://www.omron.com', domeniu: 'Automatizări industriale, senzori și componente de siguranță' },
-  { re: /PHOENIX\s*CONTACT/i, name: 'Phoenix Contact', url: 'https://www.phoenixcontact.com', domeniu: 'Conectică industrială și sisteme de automatizare' },
-  { re: /FESTO/i, name: 'Festo', url: 'https://www.festo.com', domeniu: 'Automatizări pneumatice și componente pentru mișcare' },
-  { re: /\bSICK\b/i, name: 'SICK', url: 'https://www.sick.com', domeniu: 'Senzori industriali și sisteme de siguranță' },
-  { re: /WEIDM/i, name: 'Weidmüller', url: 'https://www.weidmueller.com', domeniu: 'Conectică și automatizări industriale' },
-  { re: /\bWAGO\b/i, name: 'WAGO', url: 'https://www.wago.com', domeniu: 'Conectică industrială și borne de conexiune' },
-  { re: /RITTAL/i, name: 'Rittal', url: 'https://www.rittal.com', domeniu: 'Dulapuri electrice și infrastructură pentru automatizări' },
-  { re: /LEGRAND/i, name: 'Legrand', url: 'https://www.legrand.com', domeniu: 'Echipamente electrice pentru clădiri și industrie' },
-  { re: /FINDER/i, name: 'Finder', url: 'https://www.findernet.com', domeniu: 'Relee și echipamente de comutație' },
-  { re: /LOVATO/i, name: 'Lovato Electric', url: 'https://www.lovatoelectric.com', domeniu: 'Aparataj electric de joasă tensiune' },
+  { re: /PANASONIC|MATSUSHITA/i, name: 'Panasonic', url: 'https://industrial.panasonic.com', domeniu: 'Automatizari industriale, PLC-uri, componente electronice si senzori' },
+  { re: /EATON|MOELLER/i, name: 'Eaton', url: 'https://www.eaton.com', domeniu: 'Echipamente electrice: intrerupatoare, contactoare, protectii pentru motoare' },
+  { re: /SIEMENS/i, name: 'Siemens', url: 'https://www.siemens.com', domeniu: 'Automatizari industriale, PLC-uri, echipamente electrice si energie' },
+  { re: /SCHNEIDER|TELEMECANIQUE/i, name: 'Schneider Electric', url: 'https://www.se.com', domeniu: 'Gestionarea energiei si automatizari industriale' },
+  { re: /\bABB\b/i, name: 'ABB', url: 'https://www.abb.com', domeniu: 'Robotica, automatizari industriale si echipamente electrice' },
+  { re: /OMRON/i, name: 'Omron', url: 'https://www.omron.com', domeniu: 'Automatizari industriale, senzori si componente de siguranta' },
+  { re: /PHOENIX\s*CONTACT/i, name: 'Phoenix Contact', url: 'https://www.phoenixcontact.com', domeniu: 'Conectica industriala si sisteme de automatizare' },
+  { re: /FESTO/i, name: 'Festo', url: 'https://www.festo.com', domeniu: 'Automatizari pneumatice si componente pentru miscare' },
+  { re: /\bSICK\b/i, name: 'SICK', url: 'https://www.sick.com', domeniu: 'Senzori industriali si sisteme de siguranta' },
+  { re: /WEIDM/i, name: 'Weidmüller', url: 'https://www.weidmueller.com', domeniu: 'Conectica si automatizari industriale' },
+  { re: /\bWAGO\b/i, name: 'WAGO', url: 'https://www.wago.com', domeniu: 'Conectica industriala si borne de conexiune' },
+  { re: /RITTAL/i, name: 'Rittal', url: 'https://www.rittal.com', domeniu: 'Dulapuri electrice si infrastructura pentru automatizari' },
+  { re: /LEGRAND/i, name: 'Legrand', url: 'https://www.legrand.com', domeniu: 'Echipamente electrice pentru cladiri si industrie' },
+  { re: /FINDER/i, name: 'Finder', url: 'https://www.findernet.com', domeniu: 'Relee si echipamente de comutatie' },
+  { re: /LOVATO/i, name: 'Lovato Electric', url: 'https://www.lovatoelectric.com', domeniu: 'Aparataj electric de joasa tensiune' },
   { re: /MEAN\s*WELL/i, name: 'Mean Well', url: 'https://www.meanwell.com', domeniu: 'Surse de alimentare (power supplies)' }
 ];
 const PART_HINTS = [
@@ -283,13 +283,13 @@ const PART_HINTS = [
   { re: /^(CJ1|CJ2|CP1|MY2|MY4|G2R|E3Z)/i, name: 'Omron', url: 'https://www.omron.com' },
   { re: /^(CS-PT|CS)/i, name: null, url: null }
 ];
-const MH10_DI = { '1P':'Cod produs (producător)','2P':'Revizie produs','P':'Cod produs (client)','Q':'Cantitate','1T':'Lot fabricație','T':'Lot fabricație','S':'Număr de serie','1S':'Număr de serie','4L':'Țara de origine','16D':'Data fabricației','9D':'Dată','6D':'Dată','D':'Dată','1V':'Producător (ID)','V':'Producător (ID)','K':'Comandă / ordin' };
+const MH10_DI = { '1P':'Cod produs (producator)','2P':'Revizie produs','P':'Cod produs (client)','Q':'Cantitate','1T':'Lot fabricatie','T':'Lot fabricatie','S':'Numar de serie','1S':'Numar de serie','4L':'Tara de origine','16D':'Data fabricatiei','9D':'Data','6D':'Data','D':'Data','1V':'Producator (ID)','V':'Producator (ID)','K':'Comanda / ordin' };
 const MH10_KEYS = Object.keys(MH10_DI).sort((a,b)=>b.length-a.length);
-const COUNTRIES = { JP:'Japonia',DE:'Germania',CN:'China',US:'SUA',RO:'România',IT:'Italia',FR:'Franța',GB:'Marea Britanie',PL:'Polonia',CZ:'Cehia',HU:'Ungaria',TR:'Turcia',KR:'Coreea de Sud',TW:'Taiwan',NL:'Olanda',CH:'Elveția',AT:'Austria',ES:'Spania',SE:'Suedia',BE:'Belgia',IN:'India',MX:'Mexic' };
+const COUNTRIES = { JP:'Japonia',DE:'Germania',CN:'China',US:'SUA',RO:'Romania',IT:'Italia',FR:'Franta',GB:'Marea Britanie',PL:'Polonia',CZ:'Cehia',HU:'Ungaria',TR:'Turcia',KR:'Coreea de Sud',TW:'Taiwan',NL:'Olanda',CH:'Elvetia',AT:'Austria',ES:'Spania',SE:'Suedia',BE:'Belgia',IN:'India',MX:'Mexic' };
 
 function gs1Country(ean) {
   const p = parseInt(ean.substring(0,3),10);
-  const R = [[0,139,'SUA / Canada'],[300,379,'Franța'],[380,380,'Bulgaria'],[383,383,'Slovenia'],[385,385,'Croația'],[400,440,'Germania'],[450,459,'Japonia'],[460,469,'Rusia'],[471,471,'Taiwan'],[489,489,'Hong Kong'],[490,499,'Japonia'],[500,509,'Marea Britanie'],[520,521,'Grecia'],[540,549,'Belgia / Luxemburg'],[560,560,'Portugalia'],[570,579,'Danemarca'],[590,590,'Polonia'],[594,594,'România'],[599,599,'Ungaria'],[640,649,'Finlanda'],[690,699,'China'],[700,709,'Norvegia'],[730,739,'Suedia'],[760,769,'Elveția'],[800,839,'Italia'],[840,849,'Spania'],[858,858,'Slovacia'],[859,859,'Cehia'],[860,860,'Serbia'],[868,869,'Turcia'],[870,879,'Olanda'],[880,881,'Coreea de Sud'],[885,885,'Thailanda'],[890,890,'India'],[893,893,'Vietnam'],[900,919,'Austria'],[930,939,'Australia'],[955,955,'Malaezia']];
+  const R = [[0,139,'SUA / Canada'],[300,379,'Franta'],[380,380,'Bulgaria'],[383,383,'Slovenia'],[385,385,'Croatia'],[400,440,'Germania'],[450,459,'Japonia'],[460,469,'Rusia'],[471,471,'Taiwan'],[489,489,'Hong Kong'],[490,499,'Japonia'],[500,509,'Marea Britanie'],[520,521,'Grecia'],[540,549,'Belgia / Luxemburg'],[560,560,'Portugalia'],[570,579,'Danemarca'],[590,590,'Polonia'],[594,594,'Romania'],[599,599,'Ungaria'],[640,649,'Finlanda'],[690,699,'China'],[700,709,'Norvegia'],[730,739,'Suedia'],[760,769,'Elvetia'],[800,839,'Italia'],[840,849,'Spania'],[858,858,'Slovacia'],[859,859,'Cehia'],[860,860,'Serbia'],[868,869,'Turcia'],[870,879,'Olanda'],[880,881,'Coreea de Sud'],[885,885,'Thailanda'],[890,890,'India'],[893,893,'Vietnam'],[900,919,'Austria'],[930,939,'Australia'],[955,955,'Malaezia']];
   for (const [a,b,name] of R) if (p>=a && p<=b) return name;
   return null;
 }
@@ -305,7 +305,7 @@ function parseMH10(text) {
   const fields=[]; let matched=0, productCode=null;
   for (const part of parts) {
     const di = MH10_KEYS.find(k=>part.startsWith(k) && part.length>k.length);
-    if (!di) { fields.push({k:'Câmp nerecunoscut',v:part}); continue; }
+    if (!di) { fields.push({k:'Camp nerecunoscut',v:part}); continue; }
     matched++;
     let val = part.substring(di.length), label = MH10_DI[di];
     if (di==='4L' && COUNTRIES[val]) val = COUNTRIES[val]+' ('+val+')';
@@ -315,10 +315,10 @@ function parseMH10(text) {
     fields.push({k:label,v:val});
   }
   if (matched < 2) return null;
-  return { fields, productCode, standard:'ANSI MH10.8.2 (etichetă industrială)' };
+  return { fields, productCode, standard:'ANSI MH10.8.2 (eticheta industriala)' };
 }
 function parseGS1(text) {
-  const AI = {'01':['GTIN (cod global produs)',14],'10':['Lot fabricație',0],'11':['Data fabricației',6],'13':['Data ambalării',6],'15':['Valabil până la',6],'17':['Data expirării',6],'21':['Număr de serie',0],'30':['Cantitate',0]};
+  const AI = {'01':['GTIN (cod global produs)',14],'10':['Lot fabricatie',0],'11':['Data fabricatiei',6],'13':['Data ambalarii',6],'15':['Valabil pana la',6],'17':['Data expirarii',6],'21':['Numar de serie',0],'30':['Cantitate',0]};
   const fields=[];
   const paren = text.match(/\((\d{2,4})\)([^\(]*)/g);
   if (paren && paren.length>=1) {
@@ -336,14 +336,14 @@ function parseGS1(text) {
 function analyzeCode(text, formatName) {
   const fields=[]; let productCode=null, standard=null, website=null, brandName=null, brandDomeniu=null;
   if (/^https?:\/\//i.test(text)) {
-    try { website={name:new URL(text).hostname,url:text,direct:true}; fields.push({k:'Tip conținut',v:'Link web'}); } catch(e){}
+    try { website={name:new URL(text).hostname,url:text,direct:true}; fields.push({k:'Tip continut',v:'Link web'}); } catch(e){}
   }
   if (!website) { const mh=parseMH10(text); if(mh){ fields.push(...mh.fields); productCode=mh.productCode; standard=mh.standard; } }
   if (!standard && !website) { const gs=parseGS1(text); if(gs){ fields.push(...gs.fields); standard=gs.standard; } }
   if (/^(EAN_13|EAN_8|UPC_A|UPC_E)$/.test(formatName) && /^\d{7,14}$/.test(text)) {
     standard='GS1 '+formatName.replace('_','-');
     fields.push({k:'GTIN (cod global produs)',v:text});
-    const c=gs1Country(text.padStart(13,'0')); if(c) fields.push({k:'Țara de înregistrare a producătorului',v:c});
+    const c=gs1Country(text.padStart(13,'0')); if(c) fields.push({k:'Tara de inregistrare a producatorului',v:c});
   }
   if (fields.length===0) { productCode=text.trim(); fields.push({k:'Cod identificat',v:productCode}); }
   if (standard) fields.unshift({k:'Standard detectat',v:standard});
@@ -357,13 +357,13 @@ function analyzeCode(text, formatName) {
   }
   if (!website) {
     const q = encodeURIComponent((productCode||text).substring(0,80)+' producator datasheet');
-    website={name:'Caută producătorul acestei piese ↗',url:'https://www.google.com/search?q='+q,direct:false};
+    website={name:'Cauta producatorul acestei piese ↗',url:'https://www.google.com/search?q='+q,direct:false};
   }
   return { fields, website, brandName, brandDomeniu, productCode, isUrl:/^https?:\/\//i.test(text) };
 }
 
 /* =====================================================================
-   [C] PORNIRE, SCANARE, PAUZĂ & REDIMENSIONARE DRAG
+   [C] PORNIRE, SCANARE, PAUZA & REDIMENSIONARE DRAG
    ===================================================================== */
 async function initCameras() {
   try {
@@ -378,7 +378,7 @@ async function initCameras() {
 }
 async function bootSystem() {
   if (location.protocol === 'file:') {
-    setStatus('Blocat','Fișier deschis direct (file://). Folosește adresa http(s), nu dublu-click.','err');
+    setStatus('Blocat','Fisier deschis direct (file://). Foloseste adresa http(s), nu dublu-click.','err');
     return;
   }
   setStatus('Initializare','Se detecteaza camerele...','warn');
@@ -438,7 +438,7 @@ async function dragEnd(e) {
         const wasPaused = isPaused;
         await stopScan();
         await startScan();
-        if (wasPaused) setStatus('Scanare activa', 'Dimensiune actualizată — se așteaptă o etichetă nouă.', 'ok');
+        if (wasPaused) setStatus('Scanare activa', 'Dimensiune actualizata — se asteapta o eticheta noua.', 'ok');
     }
 }
 function applyBoxCSS() {
@@ -460,9 +460,8 @@ async function startScan() {
     experimentalFeatures: { useBarCodeDetectorIfSupported: true }
   });
   
-  // OPTIMIZARE VITEZĂ QR/BARCODE
   const config = {
-    fps: 20, // Crescut la 20 pentru reacție rapidă
+    fps: 20, 
     qrbox: function (w, h) {
       const width = Math.floor(w * (boxWidthPercent / 100));
       const height = Math.floor(h * (boxHeightPercent / 100));
@@ -470,7 +469,7 @@ async function startScan() {
     },
     videoConstraints: {
       deviceId: { exact: cameraId },
-      width: { ideal: 1920 }, height: { ideal: 1080 }, // Rezoluție echilibrată pentru mai multe cadre pe secundă
+      width: { ideal: 1920 }, height: { ideal: 1080 }, 
       advanced: [{ focusMode: 'continuous' }]
     }
   };
@@ -549,7 +548,7 @@ function loadScript(src) {
     const s = document.createElement('script');
     s.src = src;
     s.onload = () => resolve();
-    s.onerror = () => reject(new Error('Nu am putut încărca ' + src));
+    s.onerror = () => reject(new Error('Nu am putut incarca ' + src));
     document.head.appendChild(s);
   });
 }
@@ -617,7 +616,7 @@ function findRememberedCorrection(candidate) {
   return best;
 }
 function updateOcrMemoryLabel() {
-  if (ocrMemoryLabel) ocrMemoryLabel.textContent = 'Corectări memorate pe acest telefon: ' + ocrMemoryCount();
+  if (ocrMemoryLabel) ocrMemoryLabel.textContent = 'Corectari memorate pe acest telefon: ' + ocrMemoryCount();
 }
 function clearOcrMemory() {
   try { localStorage.removeItem(OCR_MEMORY_KEY); } catch (e) {}
@@ -696,8 +695,6 @@ async function runOcr() {
   const sy = Math.floor((ch - cropH) / 2);
   
   const canvas = document.createElement('canvas');
-  // OPTIMIZARE TIMP PROCESARE OCR
-  // Upscale de doar 2x este suficient si masiv mai rapid decat vechiul 3x
   canvas.width = cropW * 2;
   canvas.height = cropH * 2;
   const cx = canvas.getContext('2d');
@@ -721,8 +718,6 @@ async function runOcr() {
     if (!ocrWorker) {
       setStatus('OCR', 'Se pregateste recunoasterea...', 'warn');
       ocrWorker = await Tesseract.createWorker('eng');
-      // OPTIMIZARE ACURATEȚE MAXIMĂ: 
-      // Eliminam literele mici si caracterele ciudate din Whitelist pentru a preveni confuzii gen 1 vs l
       await ocrWorker.setParameters({
         tessedit_pageseg_mode: '6',
         tessedit_char_whitelist: 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789-,./ ' 
@@ -757,7 +752,7 @@ async function runOcr() {
         }
       } else {
         lastOcrCandidate = null;
-        setStatus('Eroare', 'Text ilizibil. Ajustează dimensiunea chenarului și lumina.', 'err');
+        setStatus('Eroare', 'Text ilizibil. Ajusteaza dimensiunea chenarului si lumina.', 'err');
         resumeAfterFailedOcr();
       }
     }
@@ -771,7 +766,7 @@ async function runOcr() {
 }
 
 /* =====================================================================
-   [E] AFIȘARE
+   [E] AFISARE
    ===================================================================== */
 function showResult(text, sursa) {
   lastFormatName = sursa;
@@ -788,7 +783,7 @@ function showResult(text, sursa) {
   onlineBlurbText.textContent = '';
   btnOnlineInfo.style.display = 'block';
   btnOnlineInfo.disabled = false;
-  btnOnlineInfo.textContent = '🌐 Caută descriere online (experimental)';
+  btnOnlineInfo.textContent = '🌐 Cauta descriere online (experimental)';
   btnOnlineInfo.dataset.url = a.website.url;
 
   infoProducator.textContent = a.brandName || 'Neidentificat';
@@ -798,15 +793,15 @@ function showResult(text, sursa) {
   let lot='—', dataFab=null; const rest=[];
   a.fields.forEach(f=>{
     if (/lot|serie/i.test(f.k) && lot==='—') { lot=f.v; return; }
-    if (/dat[ăa]/i.test(f.k) && !dataFab) { dataFab=f.v; return; }
-    if (/tip conținut/i.test(f.k)) return;
+    if (/dat[a]/i.test(f.k) && !dataFab) { dataFab=f.v; return; }
+    if (/tip continut/i.test(f.k)) return;
     rest.push(f.k+': '+f.v);
   });
   infoLot.textContent = lot;
   const det = [];
-  if (dataFab) det.push('Fabricație: '+dataFab);
+  if (dataFab) det.push('Fabricatie: '+dataFab);
   rest.forEach(r=>det.push(r));
-  infoDetalii.textContent = det.length ? det.join('  ·  ') : 'Nicio informație suplimentară în cod.';
+  infoDetalii.textContent = det.length ? det.join('  ·  ') : 'Nicio informatie suplimentara in cod.';
 
   resultSection.classList.add('visible');
   if (!/Nu am gasit|am afisat textul/.test(statusDetail.textContent)) setStatus('In pauza','Rezultat afisat. Apasa „URMATOAREA SCANARE".','warn');
@@ -834,7 +829,7 @@ async function fetchOnlineBlurb() {
   const url = btnOnlineInfo.dataset.url;
   if (!url) return;
   btnOnlineInfo.disabled = true;
-  btnOnlineInfo.textContent = 'Se caută...';
+  btnOnlineInfo.textContent = 'Se cauta...';
   const controller = new AbortController();
   const timeout = setTimeout(() => controller.abort(), 7000);
   try {
@@ -849,16 +844,16 @@ async function fetchOnlineBlurb() {
     const host = new URL(url).hostname;
     const text = [title, desc.trim()].filter(Boolean).join(' — ');
     if (text) {
-      onlineBlurbText.textContent = 'Sursă: ' + host + '.  ' + text.substring(0, 400);
+      onlineBlurbText.textContent = 'Sursa: ' + host + '.  ' + text.substring(0, 400);
       onlineBlurb.classList.add('visible');
       btnOnlineInfo.style.display = 'none';
     } else {
-      onlineBlurbText.textContent = 'Pagina nu conține o descriere extrasă automat. Deschide linkul direct pentru detalii.';
+      onlineBlurbText.textContent = 'Pagina nu contine o descriere extrasa automat. Deschide linkul direct pentru detalii.';
       onlineBlurb.classList.add('visible');
       btnOnlineInfo.style.display = 'none';
     }
   } catch (err) {
-    onlineBlurbText.textContent = 'Căutarea online nu a reușit acum (serviciu indisponibil sau pagină blocată). Folosește linkul direct de mai sus.';
+    onlineBlurbText.textContent = 'Cautarea online nu a reusit acum (serviciu indisponibil sau pagina blocata). Foloseste linkul direct de mai sus.';
     onlineBlurb.classList.add('visible');
     btnOnlineInfo.style.display = 'none';
   } finally {
