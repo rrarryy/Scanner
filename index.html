@@ -113,7 +113,7 @@
       <span class="pill" id="statusPill">In asteptare</span>
     </div>
 
-    <div class="viewfinder mirror" id="viewfinder">
+    <div class="viewfinder" id="viewfinder">
       <div id="reader"></div>
       <div class="placeholder" id="placeholder">
         <div class="icon">📷</div>
@@ -357,12 +357,21 @@ async function startScan() {
   const cameraId = cameraSelect.value;
   if (!cameraId) return;
 
+  // Detectam daca este camera frontala pe baza etichetei (label) din select
+  const selectedOption = cameraSelect.options[cameraSelect.selectedIndex];
+  const cameraLabel = selectedOption ? selectedOption.textContent.toLowerCase() : '';
+  
+  // Daca include termeni specifici camerelor frontale, activam oglinda. Altfel, o oprim.
+  const isFrontCamera = cameraLabel.includes('front') || cameraLabel.includes('user') || cameraLabel.includes('selfie');
+  
+  mirrorToggle.checked = isFrontCamera;
+  viewfinder.classList.toggle('mirror', isFrontCamera);
+
   scanner = new Html5Qrcode('reader', {
     formatsToSupport: FORMATS,
     experimentalFeatures: { useBarCodeDetectorIfSupported: true }
   });
 
-  // qrbox LAT (pentru coduri de bare) dar și înalt (pentru QR/DataMatrix).
   const config = {
     fps: 10,
     qrbox: function (w, h) {
@@ -373,7 +382,7 @@ async function startScan() {
     videoConstraints: {
       deviceId: { exact: cameraId },
       width: { ideal: 2560 }, height: { ideal: 1440 },
-      advanced: [{ focusMode: 'continuous' }]   // autofocus, ignorat dacă nu e suportat
+      advanced: [{ focusMode: 'continuous' }]
     }
   };
 
@@ -433,107 +442,139 @@ btnNextScan.addEventListener('click', () => {
 });
 
 /* =====================================================================
-   [D] OCR — LA CERERE (nu în buclă!), cu preprocesare și scor
+   [D] OCR — LA CERERE (Varianta Optimizata)
    ===================================================================== */
-function loadScript(src) {
-  return new Promise((res, rej) => {
-    const s = document.createElement('script');
-    s.src=src; s.onload=res; s.onerror=()=>rej(new Error('Nu am putut încărca '+src));
-    document.head.appendChild(s);
-  });
-}
 
-// Alb-negru cu contrast mărit — Tesseract citește mult mai bine
-function preprocess(srcCanvas) {
+// 1. PRE-PROCESARE: Transforma imaginea in alb-negru extrem pentru a elimina reflexiile
+function preprocessForOcr(srcCanvas) {
   const ctx = srcCanvas.getContext('2d');
-  const img = ctx.getImageData(0,0,srcCanvas.width,srcCanvas.height);
-  const d = img.data;
-  for (let i=0;i<d.length;i+=4) {
-    let g = 0.299*d[i] + 0.587*d[i+1] + 0.114*d[i+2];
-    g = (g-128)*1.5 + 128;          // creștem contrastul
-    g = g<0?0:g>255?255:g;
-    d[i]=d[i+1]=d[i+2]=g;
+  const img = ctx.getImageData(0, 0, srcCanvas.width, srcCanvas.height);
+  const data = img.data;
+
+  for (let i = 0; i < data.length; i += 4) {
+    // Extragem luminozitatea (Grayscale)
+    let gray = 0.299 * data[i] + 0.587 * data[i+1] + 0.114 * data[i+2];
+    
+    // Marim contrastul puternic (ajuta enorm la citirea textului de pe fundal colorat)
+    gray = (gray - 128) * 1.8 + 128;
+    gray = gray < 0 ? 0 : gray > 255 ? 255 : gray;
+
+    data[i] = data[i+1] = data[i+2] = gray;
   }
-  ctx.putImageData(img,0,0);
+  ctx.putImageData(img, 0, 0);
   return srcCanvas;
 }
 
+// 2. FILTRARE (Regex): Extrage doar ce seamana a cod de produs
+function extractValidProductCode(rawText) {
+  const cleanText = (rawText || '').toUpperCase();
+  
+  // Cautam structuri de tipul: Litere urmate de Cifre (ex: LC1D18, PT1200, SN-9982-AX)
+  const regexPatterns = [
+    /[A-Z]{2,6}[-–]?[0-9]{2,10}[A-Z0-9]*/g,
+    /[A-Z0-9]{1,6}[-–][A-Z0-9]{2,14}/g
+  ];
+
+  let candidates = new Set();
+  regexPatterns.forEach(regex => {
+    let matches = cleanText.match(regex) || [];
+    matches.forEach(m => candidates.add(m.replace(/–/g, '-'))); // uniformizam cratimele
+  });
+
+  // Lista neagra: cuvinte care sunt citite des dar nu sunt piese
+  const invalidWords = /^(CE|UL|CSA|UKCA|ROHS|EAN|ISO|QTY|LOT|MADE|TYPE|PART)$/;
+
+  let bestMatch = null;
+  candidates.forEach(candidate => {
+    // Daca textul extras nu face parte din lista neagra, il consideram valid
+    if (!invalidWords.test(candidate)) {
+       bestMatch = candidate; 
+    }
+  });
+
+  return bestMatch;
+}
+
+// 3. EXECUTIE OCR
 async function runOcr() {
   const video = document.querySelector('#reader video');
-  if (!video || !video.videoWidth) { setStatus('Atentie','Porneste mai intai scanarea.','err'); return; }
+  if (!video || !video.videoWidth) { 
+    setStatus('Atentie', 'Porneste mai intai scanarea camerei.', 'err'); 
+    return; 
+  }
 
-  // 1) Captură + decupaj central (elimină fundalul) + preprocesare
-  const cw = video.videoWidth, ch = video.videoHeight;
-  const cropW = Math.floor(cw*0.9), cropH = Math.floor(ch*0.6);
-  const sx = Math.floor((cw-cropW)/2), sy = Math.floor((ch-cropH)/2);
+  // Segmentare: Taiem doar mijlocul cadrului video
+  const cw = video.videoWidth;
+  const ch = video.videoHeight;
+  const cropW = Math.floor(cw * 0.8);
+  const cropH = Math.floor(ch * 0.4);
+  const sx = Math.floor((cw - cropW) / 2);
+  const sy = Math.floor((ch - cropH) / 2);
+
   const canvas = document.createElement('canvas');
-  canvas.width = cropW*2; canvas.height = cropH*2;   // upscale 2x
+  // Upscale 2x la rezolutie pentru a ajuta Tesseract sa vada detaliile literelor
+  canvas.width = cropW * 2; 
+  canvas.height = cropH * 2;
   const cx = canvas.getContext('2d');
   cx.imageSmoothingEnabled = true;
   cx.drawImage(video, sx, sy, cropW, cropH, 0, 0, canvas.width, canvas.height);
-  preprocess(canvas);
+  
+  // Aplicam filtrul alb-negru
+  preprocessForOcr(canvas);
 
-  handleSuccessfulScan.length; // noop
-  if (!isPaused && scanner && running) { try { scanner.pause(true);} catch(e){} isPaused=true; viewfinder.classList.add('is-paused'); }
+  // Punem video-ul in pauza in timpul procesarii
+  if (!isPaused && scanner && running) { 
+    try { scanner.pause(true); } catch(e){} 
+    isPaused = true; 
+    viewfinder.classList.add('is-paused'); 
+  }
+  
   btnOcr.disabled = true;
-  const old = btnOcr.textContent;
+  const originalBtnText = btnOcr.textContent;
 
   try {
+    // Initializare Tesseract.js (se face o singura data)
     if (!window.Tesseract) {
-      setStatus('OCR','Se incarca motorul OCR (prima data ~10-20 s)...','warn');
+      setStatus('OCR', 'Se descarca motorul de citire (doar prima data)...', 'warn');
       await loadScript('https://cdnjs.cloudflare.com/ajax/libs/tesseract.js/5.1.0/tesseract.min.js');
     }
     if (!ocrWorker) {
-      setStatus('OCR','Se pregateste recunoasterea de text...','warn');
+      setStatus('OCR', 'Se pregateste recunoasterea...', 'warn');
       ocrWorker = await Tesseract.createWorker('eng');
-      try { await ocrWorker.setParameters({ tessedit_pageseg_mode: '6' }); } catch(e){}
+      // Setare psm=6 recomanda motorului sa presupuna un singur bloc uniform de text
+      await ocrWorker.setParameters({ tessedit_pageseg_mode: '6' });
     }
-    setStatus('OCR','Se citeste textul din imagine...','warn');
-    btnOcr.textContent = 'Se citeste...';
+    
+    setStatus('OCR', 'Se analizeaza eticheta...', 'warn');
+    btnOcr.textContent = 'Se proceseaza...';
 
+    // Citirea efectiva a textului de pe canvas
     const { data } = await ocrWorker.recognize(canvas);
-    const code = extractPartCode(data.text || '');
+    
+    // Extragerea logica a codului
+    const finalCode = extractValidProductCode(data.text);
 
-    if (code) {
-      showResult(code, 'TEXT (OCR)');
+    if (finalCode) {
+      showResult(finalCode, 'TEXT (OCR)');
     } else {
-      const t = (data.text||'').trim();
-      if (t) { showResult(t.substring(0,300), 'TEXT (OCR)'); setStatus('In pauza','Nu am gasit un cod clar — am afisat textul citit.','warn'); }
-      else { setStatus('OCR','Nu am putut citi text. Apropie eticheta, lumina buna, reincearca.','err'); resumeAfterFailedOcr(); }
+      // Fallback: Daca nu s-a recunoscut tiparul dorit, aratam totusi ce s-a citit
+      const rawText = (data.text || '').trim();
+      if (rawText) { 
+        showResult(rawText.substring(0, 40), 'TEXT BRUT'); 
+        setStatus('In pauza', 'S-a citit text, dar nu pare a fi un cod de produs.', 'warn'); 
+      } else { 
+        setStatus('Eroare', 'Text ilizibil. Muta camera intr-o zona cu lumina mai buna.', 'err'); 
+        resumeAfterFailedOcr(); 
+      }
     }
   } catch (err) {
     setStatus('Eroare OCR', String(err), 'err');
     resumeAfterFailedOcr();
   } finally {
-    btnOcr.textContent = old;
+    btnOcr.textContent = originalBtnText;
     if (!isPaused) btnOcr.disabled = false;
   }
 }
-
-function resumeAfterFailedOcr() {
-  if (scanner && running && isPaused) { try { scanner.resume(); } catch(e){} isPaused=false; viewfinder.classList.remove('is-paused'); btnOcr.disabled=false; }
-}
-
-// Alege cel mai probabil cod de piesă (ex.: CS-PT1200), respinge marcaje (CE, UL...)
-function extractPartCode(text) {
-  const up = (text||'').toUpperCase();
-  const cands = new Set();
-  (up.match(/[A-Z0-9]{1,6}[-–][A-Z0-9]{2,14}(?:[-–][A-Z0-9]+)*/g)||[]).forEach(c=>cands.add(c.replace(/–/g,'-')));
-  (up.match(/\b[A-Z]{2,6}\d{2,10}[A-Z0-9]*\b/g)||[]).forEach(c=>cands.add(c));
-  const BAD = /^(CE|UL|CSA|UKCA|MSIP|ROHS|RO|EAN|ISO|IEC|REACH|MADE|PC|QTY|CAT|TYPE|SN|LOT)$/;
-  let best=null, bestScore=-1;
-  cands.forEach(c=>{
-    let s=0;
-    if (c.includes('-')) s+=3;
-    if (/\d{2,}/.test(c)) s+=2;
-    if (c.length>=6 && c.length<=16) s+=1;
-    if (PART_HINTS.some(h=>h.re.test(c)) || /^AFPX/.test(c)) s+=4;
-    if (BAD.test(c)) s-=8;
-    if (s>bestScore) { bestScore=s; best=c; }
-  });
-  return bestScore>=3 ? best : null;
-}
-
 /* =====================================================================
    [E] AFIȘARE în grila existentă
    ===================================================================== */
