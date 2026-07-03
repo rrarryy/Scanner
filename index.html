@@ -39,7 +39,6 @@
   .pill.err { background: var(--danger-bg); color: var(--danger); }
   .pill.warn { background: var(--warn-bg); color: var(--warn); }
   
-  /* MODIFICARE PUNCTUL 3: Zona de scanare mai mică pe înălțime (compactă) */
   .viewfinder { position: relative; background: #0e1319; height: 260px; display: flex; align-items: center; justify-content: center; overflow: hidden; border-radius: 8px; }
   #reader { width: 100%; height: 100%; display: flex; align-items: center; justify-content: center; }
   #reader video { object-fit: cover !important; min-height: 100%; min-width: 100%; }
@@ -66,27 +65,26 @@
   
   .options-row { margin-top: 10px; padding-top: 10px; border-top: 1px solid var(--border); display: flex; align-items: center; justify-content: space-between; gap: 10px; flex-wrap: wrap; }
 
-  /* MODIFICARE PUNCTUL 2: Previzualizare zonă de scanare interactivă */
+  /* PREVIZUALIZARE ZONĂ SCANARE - Linie punctată curată, colțuri invizibile */
   .box-preview {
     position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);
     border: 2px dashed rgba(77,163,255,.9); border-radius: 6px;
     z-index: 6; box-shadow: 0 0 0 2000px rgba(14,19,25,.4);
-    pointer-events: none; /* Lasă tap-ul să treacă la cameră, blochează doar marginile */
+    pointer-events: none; 
     display: none;
   }
+  /* Acestea sunt zonele de tragere - invizibile, dar funcționale și mai mari pentru touch */
   .resize-handle {
-    position: absolute; width: 24px; height: 24px;
-    background: rgba(15, 76, 129, 0.9); border: 2px solid #fff; border-radius: 50%;
-    box-shadow: 0 2px 4px rgba(0,0,0,0.3); z-index: 7;
-    pointer-events: auto; /* Prinde eventurile de touch/mouse DOAR pe cerculețe */
+    position: absolute; width: 44px; height: 44px;
+    background: transparent; border: none; box-shadow: none; z-index: 7;
+    pointer-events: auto; 
   }
-  .rh-tl { top: -12px; left: -12px; cursor: nwse-resize; }
-  .rh-tr { top: -12px; right: -12px; cursor: nesw-resize; }
-  .rh-bl { bottom: -12px; left: -12px; cursor: nesw-resize; }
-  .rh-br { bottom: -12px; right: -12px; cursor: nwse-resize; }
+  .rh-tl { top: -22px; left: -22px; cursor: nwse-resize; }
+  .rh-tr { top: -22px; right: -22px; cursor: nesw-resize; }
+  .rh-bl { bottom: -22px; left: -22px; cursor: nesw-resize; }
+  .rh-br { bottom: -22px; right: -22px; cursor: nwse-resize; }
   .drag-hint { font-size: 11.5px; color: var(--ink-soft); margin-top: 6px; text-align: center; }
 
-  /* Rezultate și Layout standard existent */
   #resultSection { display: none; }
   #resultSection.visible { display: block; }
   .website-link-box { display: block; background: var(--primary); color: white; text-decoration: none; padding: 12px; border-radius: 8px; text-align: center; font-weight: 600; margin-bottom: 16px; font-size: 14px; word-break: break-word; }
@@ -132,8 +130,8 @@
         <div id="phText">Asteapta initializarea sistemelor...</div>
       </div>
       <div class="scanline"></div>
-      <!-- Punctul 2: Box interactiv cu 4 mânere de colț -->
       <div class="box-preview" id="boxPreview">
+         <!-- Colțurile sunt acum transparente -->
          <div class="resize-handle rh-tl"></div>
          <div class="resize-handle rh-tr"></div>
          <div class="resize-handle rh-bl"></div>
@@ -151,7 +149,7 @@
         <button id="btnStop">Opreste</button>
         <button id="btnOcr">Citeste text (OCR)</button>
       </div>
-      <div class="drag-hint" id="dragHint" style="display:none;">Trage de punctele albastre pentru a focusa scanarea doar pe codul dorit.</div>
+      <div class="drag-hint" id="dragHint" style="display:none;">Trage de colțurile liniei punctate pentru a ajusta zona de scanare.</div>
       <div class="options-row" style="border-top:none; padding-top:6px; margin-top:10px;">
         <span style="font-size: 12px; color: var(--ink-soft); font-weight: bold;" id="statusDetail">Incarcare...</span>
       </div>
@@ -236,8 +234,8 @@ let scanner = null;
 let running = false;
 let isPaused = false;
 let ocrWorker = null;
-let boxWidthPercent = 65;   // Valoare initiala chenar
-let boxHeightPercent = 45;  // Valoare initiala chenar
+let boxWidthPercent = 65;   
+let boxHeightPercent = 45;  
 let lastFormatName = 'Cod Standard';
 let lastOcrCandidate = null;
 
@@ -257,7 +255,7 @@ const FORMATS = [
 ];
 
 /* =====================================================================
-   [B] INTERPRETORUL DE CODURI (Neschimbat)
+   [B] INTERPRETORUL DE CODURI 
    ===================================================================== */
 const BRANDS = [
   { re: /PANASONIC|MATSUSHITA/i, name: 'Panasonic', url: 'https://industrial.panasonic.com', domeniu: 'Automatizări industriale, PLC-uri, componente electronice și senzori' },
@@ -389,10 +387,10 @@ async function bootSystem() {
   setStatus('Pregatit','Alege camera si apasa „Porneste".','ok');
   phText.textContent = 'Alege camera si apasa „Porneste".';
   btnStart.disabled = false;
-  applyBoxCSS(); // Inițializare CSS box
+  applyBoxCSS(); 
 }
 
-// LOGICA REDIMENSIONARE CU DEGETUL/MOUSE-UL (Punctul 2)
+// LOGICA REDIMENSIONARE
 let isResizing = false;
 const handles = document.querySelectorAll('.resize-handle');
 handles.forEach(h => {
@@ -420,14 +418,12 @@ function dragMove(e) {
     const centerX = viewRect.left + viewRect.width / 2;
     const centerY = viewRect.top + viewRect.height / 2;
 
-    // Calculăm noua dimensiune pe baza distanței dintre deget și centrul vizorului
     let newW = Math.abs(clientX - centerX) * 2;
     let newH = Math.abs(clientY - centerY) * 2;
 
     const viewW = viewRect.width;
     const viewH = viewRect.height;
 
-    // Restricționăm să nu iasă din ecran și să nu se facă prea mică
     newW = Math.max(60, Math.min(newW, viewW * 0.95));
     newH = Math.max(60, Math.min(newH, viewH * 0.95));
 
@@ -438,7 +434,6 @@ function dragMove(e) {
 async function dragEnd(e) {
     if (!isResizing) return;
     isResizing = false;
-    // La ridicarea degetului, repornim scanner-ul cu noile dimensiuni pentru camera optica
     if (running) {
         const wasPaused = isPaused;
         await stopScan();
@@ -455,7 +450,6 @@ async function startScan() {
   const cameraId = cameraSelect.value;
   if (!cameraId) return;
 
-  // Punctul 1: Ghicire automată pentru aplicarea oglinzii DOAR pe frontală
   const selectedOption = cameraSelect.options[cameraSelect.selectedIndex];
   const cameraLabel = selectedOption ? selectedOption.textContent.toLowerCase() : '';
   let isFrontCamera = cameraLabel.includes('front') || cameraLabel.includes('user') || cameraLabel.includes('selfie');
@@ -466,8 +460,9 @@ async function startScan() {
     experimentalFeatures: { useBarCodeDetectorIfSupported: true }
   });
   
+  // OPTIMIZARE VITEZĂ QR/BARCODE
   const config = {
-    fps: 10,
+    fps: 20, // Crescut la 20 pentru reacție rapidă
     qrbox: function (w, h) {
       const width = Math.floor(w * (boxWidthPercent / 100));
       const height = Math.floor(h * (boxHeightPercent / 100));
@@ -475,7 +470,7 @@ async function startScan() {
     },
     videoConstraints: {
       deviceId: { exact: cameraId },
-      width: { ideal: 2560 }, height: { ideal: 1440 },
+      width: { ideal: 1920 }, height: { ideal: 1080 }, // Rezoluție echilibrată pentru mai multe cadre pe secundă
       advanced: [{ focusMode: 'continuous' }]
     }
   };
@@ -488,7 +483,6 @@ async function startScan() {
       () => {}
     );
 
-    // Verificare tehnică avansată pentru oglindire (suprascrie ghicirea din text dacă browserul permite)
     try {
       const videoEl = document.querySelector('#reader video');
       const track = videoEl && videoEl.srcObject ? videoEl.srcObject.getVideoTracks()[0] : null;
@@ -694,7 +688,6 @@ async function runOcr() {
     return;
   }
   
-  // Utilizăm zona ajustabilă specifică pentru preluarea datelor OCR
   const cw = video.videoWidth;
   const ch = video.videoHeight;
   const cropW = Math.floor(cw * (boxWidthPercent / 100));
@@ -703,8 +696,10 @@ async function runOcr() {
   const sy = Math.floor((ch - cropH) / 2);
   
   const canvas = document.createElement('canvas');
-  canvas.width = cropW * 3;
-  canvas.height = cropH * 3;
+  // OPTIMIZARE TIMP PROCESARE OCR
+  // Upscale de doar 2x este suficient si masiv mai rapid decat vechiul 3x
+  canvas.width = cropW * 2;
+  canvas.height = cropH * 2;
   const cx = canvas.getContext('2d');
   cx.imageSmoothingEnabled = true;
   cx.drawImage(video, sx, sy, cropW, cropH, 0, 0, canvas.width, canvas.height);
@@ -726,9 +721,11 @@ async function runOcr() {
     if (!ocrWorker) {
       setStatus('OCR', 'Se pregateste recunoasterea...', 'warn');
       ocrWorker = await Tesseract.createWorker('eng');
+      // OPTIMIZARE ACURATEȚE MAXIMĂ: 
+      // Eliminam literele mici si caracterele ciudate din Whitelist pentru a preveni confuzii gen 1 vs l
       await ocrWorker.setParameters({
         tessedit_pageseg_mode: '6',
-        tessedit_char_whitelist: 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-,./ '
+        tessedit_char_whitelist: 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789-,./ ' 
       });
     }
 
