@@ -187,6 +187,8 @@
             <input type="text" id="rawCodeInput" value="" spellcheck="false">
             <button id="btnRecalc">Recalculează</button>
           </div>
+          <div class="field-hint" id="ocrMemoryLabel">Corectări memorate pe acest telefon: 0</div>
+          <div class="field-hint" style="margin-top:-10px;"><a href="#" id="btnClearOcrMemory" style="color:var(--primary);">Șterge memoria de corectări</a></div>
         </div>
         <div class="data-item">
           <span class="data-label">Producator</span>
@@ -239,6 +241,8 @@ const boxWLabel = document.getElementById('boxWLabel');
 const boxHLabel = document.getElementById('boxHLabel');
 const rawCodeInput = document.getElementById('rawCodeInput');
 const btnRecalc = document.getElementById('btnRecalc');
+const ocrMemoryLabel = document.getElementById('ocrMemoryLabel');
+const btnClearOcrMemory = document.getElementById('btnClearOcrMemory');
 const btnOnlineInfo = document.getElementById('btnOnlineInfo');
 const onlineBlurb = document.getElementById('onlineBlurb');
 const onlineBlurbText = document.getElementById('onlineBlurbText');
@@ -249,6 +253,7 @@ let ocrWorker = null;
 let boxWidthPercent = 70;   // Punctul 2: dimensiunea zonei de scanare, reglabilă
 let boxHeightPercent = 45;
 let lastFormatName = 'Cod Standard';
+let lastOcrCandidate = null;   // ultimul cod produs de OCR, înainte de orice corectare manuală
 function setStatus(pillText, detailText, kind) {
   statusPill.textContent = pillText;
   statusPill.className = 'pill' + (kind ? ' ' + kind : '');
@@ -566,6 +571,68 @@ function otsuThreshold(hist, total) {
   return threshold;
 }
 
+// Punctul nou: memorie locală de corectări. Rămâne DOAR pe acest telefon/
+// browser (localStorage) — nu se sincronizează nicăieri, nu antrenează
+// rețeaua neuronală Tesseract, ci ține minte perechile "citire greșită ->
+// corectare confirmată de tine" și le reaplică automat când OCR-ul produce
+// din nou ceva foarte asemănător.
+const OCR_MEMORY_KEY = 'ocrCorrectionMemory_v1';
+
+function levenshtein(a, b) {
+  const m = a.length, n = b.length;
+  const dp = Array.from({ length: m + 1 }, () => new Array(n + 1).fill(0));
+  for (let i = 0; i <= m; i++) dp[i][0] = i;
+  for (let j = 0; j <= n; j++) dp[0][j] = j;
+  for (let i = 1; i <= m; i++) {
+    for (let j = 1; j <= n; j++) {
+      dp[i][j] = a[i-1] === b[j-1] ? dp[i-1][j-1] : 1 + Math.min(dp[i-1][j-1], dp[i-1][j], dp[i][j-1]);
+    }
+  }
+  return dp[m][n];
+}
+
+function loadOcrMemory() {
+  try { return JSON.parse(localStorage.getItem(OCR_MEMORY_KEY) || '{}'); }
+  catch (e) { return {}; }
+}
+function saveOcrMemory(mem) {
+  try { localStorage.setItem(OCR_MEMORY_KEY, JSON.stringify(mem)); } catch (e) {}
+}
+function ocrMemoryCount() {
+  return Object.keys(loadOcrMemory()).length;
+}
+function rememberCorrection(wrongText, correctText) {
+  if (!wrongText || !correctText) return;
+  const w = wrongText.trim().toUpperCase(), c = correctText.trim().toUpperCase();
+  if (!w || !c || w === c) return;
+  const mem = loadOcrMemory();
+  mem[w] = c;
+  saveOcrMemory(mem);
+  updateOcrMemoryLabel();
+}
+function findRememberedCorrection(candidate) {
+  if (!candidate) return null;
+  const mem = loadOcrMemory();
+  const up = candidate.trim().toUpperCase();
+  if (mem[up]) return mem[up];
+  // potrivire aproximativă — util pentru că OCR nu citește niciodată
+  // pixel-perfect identic de două ori, chiar și pe același cod
+  let best = null, bestDist = Infinity;
+  for (const key in mem) {
+    const maxAllowed = key.length <= 6 ? 1 : 2;   // coduri scurte: toleranță mai mică
+    const d = levenshtein(up, key);
+    if (d <= maxAllowed && d < bestDist) { bestDist = d; best = mem[key]; }
+  }
+  return best;
+}
+function updateOcrMemoryLabel() {
+  if (ocrMemoryLabel) ocrMemoryLabel.textContent = 'Corectări memorate pe acest telefon: ' + ocrMemoryCount();
+}
+function clearOcrMemory() {
+  try { localStorage.removeItem(OCR_MEMORY_KEY); } catch (e) {}
+  updateOcrMemoryLabel();
+}
+
 function preprocessForOcr(srcCanvas) {
   const ctx = srcCanvas.getContext('2d');
   const img = ctx.getImageData(0, 0, srcCanvas.width, srcCanvas.height);
@@ -683,13 +750,27 @@ async function runOcr() {
     const finalCode = extractValidProductCode(data.text);
 
     if (finalCode) {
-      showResult(finalCode, 'TEXT (OCR)');
+      lastOcrCandidate = finalCode;
+      const remembered = findRememberedCorrection(finalCode);
+      if (remembered && remembered !== finalCode.toUpperCase()) {
+        showResult(remembered, 'TEXT (OCR — corectat din memorie)');
+      } else {
+        showResult(finalCode, 'TEXT (OCR)');
+      }
     } else {
       const rawText = (data.text || '').trim();
       if (rawText) {
-        showResult(rawText.substring(0, 40), 'TEXT BRUT');
-        setStatus('In pauza', 'S-a citit text, dar nu pare a fi un cod de produs.', 'warn');
+        const trimmed = rawText.substring(0, 40);
+        lastOcrCandidate = trimmed;
+        const remembered = findRememberedCorrection(trimmed);
+        if (remembered) {
+          showResult(remembered, 'TEXT (OCR — corectat din memorie)');
+        } else {
+          showResult(trimmed, 'TEXT BRUT');
+          setStatus('In pauza', 'S-a citit text, dar nu pare a fi un cod de produs.', 'warn');
+        }
       } else {
+        lastOcrCandidate = null;
         setStatus('Eroare', 'Text ilizibil. Muta camera intr-o zona cu lumina mai buna.', 'err');
         resumeAfterFailedOcr();
       }
@@ -750,9 +831,22 @@ function showResult(text, sursa) {
 // recalculăm toate informațiile pornind de la textul corectat.
 btnRecalc.addEventListener('click', () => {
   const corrected = rawCodeInput.value.trim();
-  if (corrected) showResult(corrected, lastFormatName);
+  if (!corrected) return;
+  // Dacă valoarea vine dintr-o citire OCR și utilizatorul a schimbat-o,
+  // reținem perechea "citire greșită -> corectare" pentru data viitoare.
+  if (lastOcrCandidate && corrected.toUpperCase() !== lastOcrCandidate.toUpperCase()) {
+    rememberCorrection(lastOcrCandidate, corrected);
+    lastOcrCandidate = null;
+  }
+  showResult(corrected, lastFormatName);
 });
 rawCodeInput.addEventListener('keydown', (e) => { if (e.key === 'Enter') btnRecalc.click(); });
+
+btnClearOcrMemory.addEventListener('click', (e) => {
+  e.preventDefault();
+  clearOcrMemory();
+});
+updateOcrMemoryLabel();
 
 // Punctul 3: descriere online, BEST-EFFORT, printr-un proxy CORS public.
 // Poate eșua (serviciu terț, gratuit, fără garanție) — tratăm eșecul elegant.
