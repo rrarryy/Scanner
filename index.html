@@ -5,7 +5,6 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
 <title>Cititor Multi-Sistem — QR, Barcode &amp; OCR</title>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/html5-qrcode/2.3.8/html5-qrcode.min.js"></script>
-<!-- Tesseract NU se mai încarcă la pornire; îl aducem doar la prima apăsare pe OCR. -->
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
@@ -39,17 +38,22 @@
   .pill.ok { background: var(--success-bg); color: var(--success); }
   .pill.err { background: var(--danger-bg); color: var(--danger); }
   .pill.warn { background: var(--warn-bg); color: var(--warn); }
-  .viewfinder { position: relative; background: #0e1319; min-height: 300px; display: flex; align-items: center; justify-content: center; }
-  #reader { width: 100%; }
+  
+  /* MODIFICARE PUNCTUL 3: Zona de scanare mai mică pe înălțime (compactă) */
+  .viewfinder { position: relative; background: #0e1319; height: 260px; display: flex; align-items: center; justify-content: center; overflow: hidden; border-radius: 8px; }
+  #reader { width: 100%; height: 100%; display: flex; align-items: center; justify-content: center; }
+  #reader video { object-fit: cover !important; min-height: 100%; min-width: 100%; }
   .viewfinder.mirror #reader video { transform: scaleX(-1); }
+  
   .paused-overlay { position: absolute; inset: 0; background: rgba(14,19,25,0.82); display: none; flex-direction: column; align-items: center; justify-content: center; color: white; z-index: 10; font-size: 14px; font-weight: 500; gap: 6px; text-align: center; padding: 20px; }
   .viewfinder.is-paused .paused-overlay { display: flex; }
   .placeholder { position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 8px; text-align: center; padding: 24px; color: #94a1b0; font-size: 13.5px; }
   .placeholder .icon { font-size: 30px; opacity: .8; }
+  
   .scanline { position: absolute; left: 4%; right: 4%; height: 2px; background: linear-gradient(90deg, transparent, #4da3ff, transparent); box-shadow: 0 0 10px 1px rgba(77,163,255,.5); animation: sweep 2.6s ease-in-out infinite; display: none; z-index: 5; }
   .viewfinder.active:not(.is-paused) .scanline { display: block; }
   @keyframes sweep { 0%,100% { top: 8%; } 50% { top: 92%; } }
-  @media (prefers-reduced-motion: reduce) { .scanline { animation: none; top: 50%; } }
+  
   .controls { display: flex; gap: 10px; flex-wrap: wrap; }
   select, button { font-family: var(--sans); font-size: 14px; font-weight: 500; border-radius: 8px; border: 1px solid var(--border); padding: 10px 14px; background: var(--surface); color: var(--ink); cursor: pointer; }
   select { flex: 1 1 220px; }
@@ -59,13 +63,30 @@
   #btnStop { display: none; flex: 1 1 110px; color: var(--danger); border-color: var(--danger); font-weight: 600; }
   #btnOcr { display: none; flex: 1 1 160px; color: var(--primary); border-color: var(--primary); font-weight: 600; }
   #btnOcr:hover:not(:disabled) { background: #e8f0f8; }
-  .options-row { margin-top: 14px; padding-top: 14px; border-top: 1px solid var(--border); display: flex; align-items: center; justify-content: space-between; gap: 10px; flex-wrap: wrap; }
-  .switch { position: relative; display: inline-block; width: 42px; height: 24px; flex-shrink: 0; }
-  .switch input { opacity: 0; width: 0; height: 0; }
-  .switch .track { position: absolute; inset: 0; border-radius: 999px; background: #c9d2dc; transition: background .15s; cursor: pointer; }
-  .switch .track::after { content: ""; position: absolute; top: 3px; left: 3px; width: 18px; height: 18px; border-radius: 50%; background: #fff; box-shadow: 0 1px 2px rgba(0,0,0,.25); transition: transform .15s; }
-  .switch input:checked + .track { background: var(--primary); }
-  .switch input:checked + .track::after { transform: translateX(18px); }
+  
+  .options-row { margin-top: 10px; padding-top: 10px; border-top: 1px solid var(--border); display: flex; align-items: center; justify-content: space-between; gap: 10px; flex-wrap: wrap; }
+
+  /* MODIFICARE PUNCTUL 2: Previzualizare zonă de scanare interactivă */
+  .box-preview {
+    position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);
+    border: 2px dashed rgba(77,163,255,.9); border-radius: 6px;
+    z-index: 6; box-shadow: 0 0 0 2000px rgba(14,19,25,.4);
+    pointer-events: none; /* Lasă tap-ul să treacă la cameră, blochează doar marginile */
+    display: none;
+  }
+  .resize-handle {
+    position: absolute; width: 24px; height: 24px;
+    background: rgba(15, 76, 129, 0.9); border: 2px solid #fff; border-radius: 50%;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.3); z-index: 7;
+    pointer-events: auto; /* Prinde eventurile de touch/mouse DOAR pe cerculețe */
+  }
+  .rh-tl { top: -12px; left: -12px; cursor: nwse-resize; }
+  .rh-tr { top: -12px; right: -12px; cursor: nesw-resize; }
+  .rh-bl { bottom: -12px; left: -12px; cursor: nesw-resize; }
+  .rh-br { bottom: -12px; right: -12px; cursor: nwse-resize; }
+  .drag-hint { font-size: 11.5px; color: var(--ink-soft); margin-top: 6px; text-align: center; }
+
+  /* Rezultate și Layout standard existent */
   #resultSection { display: none; }
   #resultSection.visible { display: block; }
   .website-link-box { display: block; background: var(--primary); color: white; text-decoration: none; padding: 12px; border-radius: 8px; text-align: center; font-weight: 600; margin-bottom: 16px; font-size: 14px; word-break: break-word; }
@@ -78,37 +99,16 @@
   .data-item.full-width { grid-column: span 2; }
   .btn-next-scan { width: 100%; background: var(--success); border-color: var(--success); color: white; padding: 14px; font-size: 16px; font-weight: 700; margin-top: 8px; box-shadow: 0 4px 6px rgba(21,127,77,0.2); transition: transform 0.1s; border-radius: 8px; cursor: pointer; }
   .btn-next-scan:active { transform: scale(0.98); }
-  .ocr-hint { font-size: 12px; color: var(--ink-soft); margin-top: 8px; line-height: 1.5; }
-
-  /* ---------- Previzualizare zonă de scanare (Punctul 2) ---------- */
-  .box-preview {
-    position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);
-    border: 2px dashed rgba(77,163,255,.85); border-radius: 6px;
-    pointer-events: none; z-index: 6;
-    box-shadow: 0 0 0 2000px rgba(14,19,25,.35);
-  }
-  .size-row { margin-top: 12px; }
-  .size-row label { font-size: 12.5px; color: var(--ink-soft); display: flex; justify-content: space-between; margin-bottom: 4px; }
-  .size-row input[type=range] { width: 100%; accent-color: var(--primary); }
-  .size-hint { font-size: 11.5px; color: var(--ink-soft); margin-top: 6px; }
-
-  /* ---------- Cod brut editabil (plasă de siguranță OCR) ---------- */
   .raw-edit-row { display: flex; gap: 8px; align-items: center; margin-bottom: 4px; }
-  #rawCodeInput {
-    font-family: var(--mono); font-size: 14px; flex: 1;
-    padding: 8px 10px; border: 1px solid var(--border); border-radius: 6px;
-    background: var(--surface); color: var(--ink);
-  }
+  #rawCodeInput { font-family: var(--mono); font-size: 14px; flex: 1; padding: 8px 10px; border: 1px solid var(--border); border-radius: 6px; background: var(--surface); color: var(--ink); }
   #rawCodeInput:focus { outline: 2px solid var(--primary); outline-offset: 1px; }
   #btnRecalc { font-size: 12.5px; padding: 8px 12px; white-space: nowrap; }
   .field-hint { font-size: 11.5px; color: var(--ink-soft); margin-bottom: 14px; }
-
-  /* ---------- Descriere online, best-effort (Punctul 3) ---------- */
   .btn-online { width: 100%; background: var(--surface); border: 1px dashed var(--primary); color: var(--primary); padding: 10px; border-radius: 8px; font-size: 13px; font-weight: 600; cursor: pointer; margin-bottom: 10px; }
   .btn-online:hover:not(:disabled) { background: #e8f0f8; }
-  .online-blurb { background: var(--warn-bg); border: 1px solid #e6d18a; border-radius: 8px; padding: 10px 12px; font-size: 12.5px; color: var(--ink); margin-bottom: 14px; line-height: 1.5; display: none; }
+  .online-blurb { background: var(--warn-bg); border: 1px solid #e6d18a; border-radius: 8px; padding: 10px 12px; font-size: 12.5px; color: var(--ink); margin-bottom: 14px; display: none; }
   .online-blurb.visible { display: block; }
-  .online-blurb .tag-exp { display: inline-block; font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: .5px; color: var(--warn); background: #fff; border: 1px solid #e6d18a; border-radius: 4px; padding: 1px 6px; margin-bottom: 6px; }
+  .online-blurb .tag-exp { display: inline-block; font-size: 10px; font-weight: 700; text-transform: uppercase; color: var(--warn); background: #fff; border: 1px solid #e6d18a; border-radius: 4px; padding: 1px 6px; margin-bottom: 6px; }
 </style>
 </head>
 <body>
@@ -132,7 +132,13 @@
         <div id="phText">Asteapta initializarea sistemelor...</div>
       </div>
       <div class="scanline"></div>
-      <div class="box-preview" id="boxPreview"></div>
+      <!-- Punctul 2: Box interactiv cu 4 mânere de colț -->
+      <div class="box-preview" id="boxPreview">
+         <div class="resize-handle rh-tl"></div>
+         <div class="resize-handle rh-tr"></div>
+         <div class="resize-handle rh-bl"></div>
+         <div class="resize-handle rh-br"></div>
+      </div>
       <div class="paused-overlay">
         <div>Analiza oprita.</div>
         <div style="font-size: 12px; font-weight: 400; opacity: 0.8;">Datele au fost preluate — apasa „URMATOAREA SCANARE".</div>
@@ -145,22 +151,7 @@
         <button id="btnStop">Opreste</button>
         <button id="btnOcr">Citeste text (OCR)</button>
       </div>
-      <div class="options-row">
-        <span style="font-size: 13px; color: var(--ink-soft);">Imagine in oglinda <span style="opacity:.7">(camera frontala)</span></span>
-        <label class="switch"><input type="checkbox" id="mirrorToggle"><span class="track"></span></label>
-      </div>
-
-      <!-- Punctul 2: dimensiune reglabilă a zonei de scanare -->
-      <div class="size-row">
-        <label><span>Lățime zonă de scanare</span><span id="boxWLabel">70%</span></label>
-        <input type="range" id="boxWidthSlider" min="30" max="95" value="70">
-      </div>
-      <div class="size-row">
-        <label><span>Înălțime zonă de scanare</span><span id="boxHLabel">45%</span></label>
-        <input type="range" id="boxHeightSlider" min="15" max="85" value="45">
-      </div>
-      <div class="size-hint">O zonă mai mică țintește mai precis un singur cod, fără să prindă coduri vecine de pe etichetă. Modificarea repornește scanarea.</div>
-
+      <div class="drag-hint" id="dragHint" style="display:none;">Trage de punctele albastre pentru a focusa scanarea doar pe codul dorit.</div>
       <div class="options-row" style="border-top:none; padding-top:6px; margin-top:10px;">
         <span style="font-size: 12px; color: var(--ink-soft); font-weight: bold;" id="statusDetail">Incarcare...</span>
       </div>
@@ -173,16 +164,14 @@
     </div>
     <div class="card-body">
       <a href="#" target="_blank" rel="noopener" class="website-link-box" id="websiteLink" style="display:none;">Deschide Website Producator ↗</a>
-
       <button class="btn-online" id="btnOnlineInfo" style="display:none;">🌐 Caută descriere online (experimental)</button>
       <div class="online-blurb" id="onlineBlurb">
         <span class="tag-exp">Neverificat</span>
         <div id="onlineBlurbText"></div>
       </div>
-
       <div class="data-grid">
         <div class="data-item full-width">
-          <span class="data-label">Cod Brut Citit <span style="font-weight:400; opacity:.75;">(editabil — corectează aici dacă OCR a greșit un caracter)</span></span>
+          <span class="data-label">Cod Brut Citit <span style="font-weight:400; opacity:.75;">(editabil — corectează aici dacă OCR a greșit)</span></span>
           <div class="raw-edit-row">
             <input type="text" id="rawCodeInput" value="" spellcheck="false">
             <button id="btnRecalc">Recalculează</button>
@@ -224,7 +213,6 @@ const statusDetail = document.getElementById('statusDetail');
 const viewfinder = document.getElementById('viewfinder');
 const placeholder = document.getElementById('placeholder');
 const phText = document.getElementById('phText');
-const mirrorToggle = document.getElementById('mirrorToggle');
 const resultSection = document.getElementById('resultSection');
 const resultFormat = document.getElementById('resultFormat');
 const websiteLink = document.getElementById('websiteLink');
@@ -235,10 +223,7 @@ const infoDomeniuRow = document.getElementById('infoDomeniuRow');
 const infoDomeniu = document.getElementById('infoDomeniu');
 const btnNextScan = document.getElementById('btnNextScan');
 const boxPreview = document.getElementById('boxPreview');
-const boxWidthSlider = document.getElementById('boxWidthSlider');
-const boxHeightSlider = document.getElementById('boxHeightSlider');
-const boxWLabel = document.getElementById('boxWLabel');
-const boxHLabel = document.getElementById('boxHLabel');
+const dragHint = document.getElementById('dragHint');
 const rawCodeInput = document.getElementById('rawCodeInput');
 const btnRecalc = document.getElementById('btnRecalc');
 const ocrMemoryLabel = document.getElementById('ocrMemoryLabel');
@@ -246,22 +231,22 @@ const btnClearOcrMemory = document.getElementById('btnClearOcrMemory');
 const btnOnlineInfo = document.getElementById('btnOnlineInfo');
 const onlineBlurb = document.getElementById('onlineBlurb');
 const onlineBlurbText = document.getElementById('onlineBlurbText');
+
 let scanner = null;
 let running = false;
 let isPaused = false;
 let ocrWorker = null;
-let boxWidthPercent = 70;   // Punctul 2: dimensiunea zonei de scanare, reglabilă
-let boxHeightPercent = 45;
+let boxWidthPercent = 65;   // Valoare initiala chenar
+let boxHeightPercent = 45;  // Valoare initiala chenar
 let lastFormatName = 'Cod Standard';
-let lastOcrCandidate = null;   // ultimul cod produs de OCR, înainte de orice corectare manuală
+let lastOcrCandidate = null;
+
 function setStatus(pillText, detailText, kind) {
   statusPill.textContent = pillText;
   statusPill.className = 'pill' + (kind ? ' ' + kind : '');
   statusDetail.textContent = detailText || '—';
 }
-mirrorToggle.addEventListener('change', () => {
-  viewfinder.classList.toggle('mirror', mirrorToggle.checked);
-});
+
 const FORMATS = [
   Html5QrcodeSupportedFormats.QR_CODE, Html5QrcodeSupportedFormats.DATA_MATRIX,
   Html5QrcodeSupportedFormats.AZTEC, Html5QrcodeSupportedFormats.PDF_417,
@@ -270,8 +255,9 @@ const FORMATS = [
   Html5QrcodeSupportedFormats.CODE_128, Html5QrcodeSupportedFormats.CODE_39,
   Html5QrcodeSupportedFormats.ITF
 ];
+
 /* =====================================================================
-   [B] INTERPRETORUL DE CODURI
+   [B] INTERPRETORUL DE CODURI (Neschimbat)
    ===================================================================== */
 const BRANDS = [
   { re: /PANASONIC|MATSUSHITA/i, name: 'Panasonic', url: 'https://industrial.panasonic.com', domeniu: 'Automatizări industriale, PLC-uri, componente electronice și senzori' },
@@ -302,6 +288,7 @@ const PART_HINTS = [
 const MH10_DI = { '1P':'Cod produs (producător)','2P':'Revizie produs','P':'Cod produs (client)','Q':'Cantitate','1T':'Lot fabricație','T':'Lot fabricație','S':'Număr de serie','1S':'Număr de serie','4L':'Țara de origine','16D':'Data fabricației','9D':'Dată','6D':'Dată','D':'Dată','1V':'Producător (ID)','V':'Producător (ID)','K':'Comandă / ordin' };
 const MH10_KEYS = Object.keys(MH10_DI).sort((a,b)=>b.length-a.length);
 const COUNTRIES = { JP:'Japonia',DE:'Germania',CN:'China',US:'SUA',RO:'România',IT:'Italia',FR:'Franța',GB:'Marea Britanie',PL:'Polonia',CZ:'Cehia',HU:'Ungaria',TR:'Turcia',KR:'Coreea de Sud',TW:'Taiwan',NL:'Olanda',CH:'Elveția',AT:'Austria',ES:'Spania',SE:'Suedia',BE:'Belgia',IN:'India',MX:'Mexic' };
+
 function gs1Country(ean) {
   const p = parseInt(ean.substring(0,3),10);
   const R = [[0,139,'SUA / Canada'],[300,379,'Franța'],[380,380,'Bulgaria'],[383,383,'Slovenia'],[385,385,'Croația'],[400,440,'Germania'],[450,459,'Japonia'],[460,469,'Rusia'],[471,471,'Taiwan'],[489,489,'Hong Kong'],[490,499,'Japonia'],[500,509,'Marea Britanie'],[520,521,'Grecia'],[540,549,'Belgia / Luxemburg'],[560,560,'Portugalia'],[570,579,'Danemarca'],[590,590,'Polonia'],[594,594,'România'],[599,599,'Ungaria'],[640,649,'Finlanda'],[690,699,'China'],[700,709,'Norvegia'],[730,739,'Suedia'],[760,769,'Elveția'],[800,839,'Italia'],[840,849,'Spania'],[858,858,'Slovacia'],[859,859,'Cehia'],[860,860,'Serbia'],[868,869,'Turcia'],[870,879,'Olanda'],[880,881,'Coreea de Sud'],[885,885,'Thailanda'],[890,890,'India'],[893,893,'Vietnam'],[900,919,'Austria'],[930,939,'Australia'],[955,955,'Malaezia']];
@@ -368,7 +355,6 @@ function analyzeCode(text, formatName) {
     brandName=brand.name;
     brandDomeniu = brand.domeniu || null;
     if(!website) website={name:brand.name+' — site oficial',url:brand.url,direct:true};
-    // Dacă PART_HINTS a găsit brandul dar nu are domeniu propriu, îl completăm din BRANDS
     if (!brandDomeniu) { const full = BRANDS.find(b=>b.name===brand.name); if (full) brandDomeniu = full.domeniu; }
   }
   if (!website) {
@@ -377,8 +363,9 @@ function analyzeCode(text, formatName) {
   }
   return { fields, website, brandName, brandDomeniu, productCode, isUrl:/^https?:\/\//i.test(text) };
 }
+
 /* =====================================================================
-   [C] PORNIRE, SCANARE, PAUZĂ
+   [C] PORNIRE, SCANARE, PAUZĂ & REDIMENSIONARE DRAG
    ===================================================================== */
 async function initCameras() {
   try {
@@ -402,23 +389,83 @@ async function bootSystem() {
   setStatus('Pregatit','Alege camera si apasa „Porneste".','ok');
   phText.textContent = 'Alege camera si apasa „Porneste".';
   btnStart.disabled = false;
+  applyBoxCSS(); // Inițializare CSS box
 }
+
+// LOGICA REDIMENSIONARE CU DEGETUL/MOUSE-UL (Punctul 2)
+let isResizing = false;
+const handles = document.querySelectorAll('.resize-handle');
+handles.forEach(h => {
+    h.addEventListener('mousedown', dragStart);
+    h.addEventListener('touchstart', dragStart, {passive: false});
+});
+document.addEventListener('mousemove', dragMove);
+document.addEventListener('touchmove', dragMove, {passive: false});
+document.addEventListener('mouseup', dragEnd);
+document.addEventListener('touchend', dragEnd);
+
+function dragStart(e) {
+    if (e.target.classList.contains('resize-handle')) {
+        isResizing = true;
+        e.preventDefault();
+    }
+}
+function dragMove(e) {
+    if (!isResizing) return;
+    e.preventDefault();
+    let clientX = e.type.includes('mouse') ? e.clientX : e.touches[0].clientX;
+    let clientY = e.type.includes('mouse') ? e.clientY : e.touches[0].clientY;
+
+    const viewRect = viewfinder.getBoundingClientRect();
+    const centerX = viewRect.left + viewRect.width / 2;
+    const centerY = viewRect.top + viewRect.height / 2;
+
+    // Calculăm noua dimensiune pe baza distanței dintre deget și centrul vizorului
+    let newW = Math.abs(clientX - centerX) * 2;
+    let newH = Math.abs(clientY - centerY) * 2;
+
+    const viewW = viewRect.width;
+    const viewH = viewRect.height;
+
+    // Restricționăm să nu iasă din ecran și să nu se facă prea mică
+    newW = Math.max(60, Math.min(newW, viewW * 0.95));
+    newH = Math.max(60, Math.min(newH, viewH * 0.95));
+
+    boxWidthPercent = (newW / viewW) * 100;
+    boxHeightPercent = (newH / viewH) * 100;
+    applyBoxCSS();
+}
+async function dragEnd(e) {
+    if (!isResizing) return;
+    isResizing = false;
+    // La ridicarea degetului, repornim scanner-ul cu noile dimensiuni pentru camera optica
+    if (running) {
+        const wasPaused = isPaused;
+        await stopScan();
+        await startScan();
+        if (wasPaused) setStatus('Scanare activa', 'Dimensiune actualizată — se așteaptă o etichetă nouă.', 'ok');
+    }
+}
+function applyBoxCSS() {
+    boxPreview.style.width = boxWidthPercent + '%';
+    boxPreview.style.height = boxHeightPercent + '%';
+}
+
 async function startScan() {
   const cameraId = cameraSelect.value;
   if (!cameraId) return;
 
-  // Ghicire preliminară a tipului de cameră, din textul etichetei
+  // Punctul 1: Ghicire automată pentru aplicarea oglinzii DOAR pe frontală
   const selectedOption = cameraSelect.options[cameraSelect.selectedIndex];
   const cameraLabel = selectedOption ? selectedOption.textContent.toLowerCase() : '';
   let isFrontCamera = cameraLabel.includes('front') || cameraLabel.includes('user') || cameraLabel.includes('selfie');
-
-  mirrorToggle.checked = isFrontCamera;
   viewfinder.classList.toggle('mirror', isFrontCamera);
 
   scanner = new Html5Qrcode('reader', {
     formatsToSupport: FORMATS,
     experimentalFeatures: { useBarCodeDetectorIfSupported: true }
   });
+  
   const config = {
     fps: 10,
     qrbox: function (w, h) {
@@ -441,24 +488,22 @@ async function startScan() {
       () => {}
     );
 
-    // Verificare SUPLIMENTARĂ, mai sigură decât eticheta: citim direct
-    // proprietatea tehnică "facingMode" a fluxului video real (user = frontală,
-    // environment = spate). O folosim dacă browserul o oferă.
+    // Verificare tehnică avansată pentru oglindire (suprascrie ghicirea din text dacă browserul permite)
     try {
       const videoEl = document.querySelector('#reader video');
       const track = videoEl && videoEl.srcObject ? videoEl.srcObject.getVideoTracks()[0] : null;
       const settings = track && track.getSettings ? track.getSettings() : null;
       if (settings && settings.facingMode) {
         const realIsFront = settings.facingMode === 'user';
-        mirrorToggle.checked = realIsFront;
         viewfinder.classList.toggle('mirror', realIsFront);
       }
-    } catch (e) { /* nesuportat pe acest browser — rămâne ghicirea din etichetă */ }
+    } catch (e) {}
 
     running = true; isPaused = false;
     viewfinder.classList.add('active');
     placeholder.style.display = 'none';
     boxPreview.style.display = 'block';
+    dragHint.style.display = 'block';
     btnStart.style.display = 'none';
     btnStop.style.display = 'inline-block';
     btnOcr.style.display = 'inline-block';
@@ -470,36 +515,13 @@ async function startScan() {
   }
 }
 
-// Punctul 2: previzualizarea vizuală a zonei de scanare (chenarul punctat din vizor)
-function updateBoxPreview() {
-  boxWLabel.textContent = boxWidthPercent + '%';
-  boxHLabel.textContent = boxHeightPercent + '%';
-  boxPreview.style.width = boxWidthPercent + '%';
-  boxPreview.style.height = boxHeightPercent + '%';
-}
-
-async function applyBoxSizeChange() {
-  updateBoxPreview();
-  if (running) {
-    // Repornim scanarea cu noua dimensiune, păstrând camera selectată
-    const wasPaused = isPaused;
-    await stopScan();
-    await startScan();
-    if (wasPaused) setStatus('Scanare activa', 'Dimensiune actualizată — se așteaptă o etichetă nouă.', 'ok');
-  }
-}
-
-boxWidthSlider.addEventListener('input', () => { boxWidthPercent = parseInt(boxWidthSlider.value, 10); updateBoxPreview(); });
-boxHeightSlider.addEventListener('input', () => { boxHeightPercent = parseInt(boxHeightSlider.value, 10); updateBoxPreview(); });
-boxWidthSlider.addEventListener('change', applyBoxSizeChange);
-boxHeightSlider.addEventListener('change', applyBoxSizeChange);
-updateBoxPreview();
 async function stopScan() {
   if (scanner && running) { try { if(isPaused) scanner.resume(); await scanner.stop(); scanner.clear(); } catch(e){} }
   scanner=null; running=false; isPaused=false;
   viewfinder.classList.remove('active','is-paused');
   placeholder.style.display='flex';
   boxPreview.style.display='none';
+  dragHint.style.display='none';
   btnStart.style.display='inline-block';
   btnStop.style.display='none';
   btnOcr.style.display='none';
@@ -524,12 +546,10 @@ btnNextScan.addEventListener('click', () => {
   btnOcr.disabled = false;
   if (scanner && running) { try { scanner.resume(); } catch(e){} setStatus('Scanare activa','Se asteapta o noua eticheta...','ok'); }
 });
+
 /* =====================================================================
    [D] OCR — LA CERERE
    ===================================================================== */
-
-// Încarcă dinamic un script extern și rezolvă promisiunea la succes.
-// FUNCȚIE CARE LIPSEA — aceasta era cauza reală pentru care OCR nu pornea deloc.
 function loadScript(src) {
   return new Promise((resolve, reject) => {
     const s = document.createElement('script');
@@ -539,9 +559,6 @@ function loadScript(src) {
     document.head.appendChild(s);
   });
 }
-
-// Reia scanarea normală dacă OCR-ul eșuează sau nu găsește text.
-// FUNCȚIE CARE LIPSEA — fără ea, orice eroare OCR bloca aplicația în pauză.
 function resumeAfterFailedOcr() {
   if (scanner && running && isPaused) {
     try { scanner.resume(); } catch (e) {}
@@ -550,10 +567,6 @@ function resumeAfterFailedOcr() {
     btnOcr.disabled = false;
   }
 }
-
-// Metoda Otsu: găsește automat cel mai bun prag alb/negru pentru imaginea
-// curentă (spre deosebire de un contrast fix, se adaptează la lumina de pe
-// fiecare etichetă în parte) — reduce mult confuziile 0/O, 8/B, 5/S la OCR.
 function otsuThreshold(hist, total) {
   let sum = 0;
   for (let t = 0; t < 256; t++) sum += t * hist[t];
@@ -571,13 +584,7 @@ function otsuThreshold(hist, total) {
   return threshold;
 }
 
-// Punctul nou: memorie locală de corectări. Rămâne DOAR pe acest telefon/
-// browser (localStorage) — nu se sincronizează nicăieri, nu antrenează
-// rețeaua neuronală Tesseract, ci ține minte perechile "citire greșită ->
-// corectare confirmată de tine" și le reaplică automat când OCR-ul produce
-// din nou ceva foarte asemănător.
 const OCR_MEMORY_KEY = 'ocrCorrectionMemory_v1';
-
 function levenshtein(a, b) {
   const m = a.length, n = b.length;
   const dp = Array.from({ length: m + 1 }, () => new Array(n + 1).fill(0));
@@ -590,17 +597,9 @@ function levenshtein(a, b) {
   }
   return dp[m][n];
 }
-
-function loadOcrMemory() {
-  try { return JSON.parse(localStorage.getItem(OCR_MEMORY_KEY) || '{}'); }
-  catch (e) { return {}; }
-}
-function saveOcrMemory(mem) {
-  try { localStorage.setItem(OCR_MEMORY_KEY, JSON.stringify(mem)); } catch (e) {}
-}
-function ocrMemoryCount() {
-  return Object.keys(loadOcrMemory()).length;
-}
+function loadOcrMemory() { try { return JSON.parse(localStorage.getItem(OCR_MEMORY_KEY) || '{}'); } catch (e) { return {}; } }
+function saveOcrMemory(mem) { try { localStorage.setItem(OCR_MEMORY_KEY, JSON.stringify(mem)); } catch (e) {} }
+function ocrMemoryCount() { return Object.keys(loadOcrMemory()).length; }
 function rememberCorrection(wrongText, correctText) {
   if (!wrongText || !correctText) return;
   const w = wrongText.trim().toUpperCase(), c = correctText.trim().toUpperCase();
@@ -615,11 +614,9 @@ function findRememberedCorrection(candidate) {
   const mem = loadOcrMemory();
   const up = candidate.trim().toUpperCase();
   if (mem[up]) return mem[up];
-  // potrivire aproximativă — util pentru că OCR nu citește niciodată
-  // pixel-perfect identic de două ori, chiar și pe același cod
   let best = null, bestDist = Infinity;
   for (const key in mem) {
-    const maxAllowed = key.length <= 6 ? 1 : 2;   // coduri scurte: toleranță mai mică
+    const maxAllowed = key.length <= 6 ? 1 : 2;
     const d = levenshtein(up, key);
     if (d <= maxAllowed && d < bestDist) { bestDist = d; best = mem[key]; }
   }
@@ -654,32 +651,23 @@ function preprocessForOcr(srcCanvas) {
   return srcCanvas;
 }
 
-// Punctul 1: corector de caractere confundabile. Pentru fiecare poziție unde
-// apare un caracter din perechile clasic-ambigue la OCR, încearcă varianta
-// alternativă și o preferă DOAR dacă rezultă un prefix de producător cunoscut
-// (ex.: "4FPX-COM6" -> "AFPX-COM6", pentru că "AFPX" e un prefix Panasonic știut).
 const CONFUSABLE_PAIRS = { '0':'O','O':'0','1':'I','I':'1','5':'S','S':'5','8':'B','B':'8','2':'Z','Z':'2','6':'G','G':'6' };
 function correctConfusables(code) {
   if (!code) return code;
   const knownPrefixMatches = (s) => PART_HINTS.some(h => h.name && h.re.test(s)) || BRANDS.some(b => b.re.test(s));
-  if (knownPrefixMatches(code)) return code;   // deja se potrivește, nu umblăm la el
+  if (knownPrefixMatches(code)) return code;
   for (let i = 0; i < code.length; i++) {
     const ch = code[i];
     if (!CONFUSABLE_PAIRS[ch]) continue;
     const variant = code.substring(0, i) + CONFUSABLE_PAIRS[ch] + code.substring(i + 1);
     if (knownPrefixMatches(variant)) return variant;
   }
-  return code;   // nicio variantă cunoscută — păstrăm ce a citit OCR-ul
+  return code;
 }
 
-// Alege cel mai BUN candidat (scor), nu doar ultimul găsit —
-// îmbunătățire față de versiunea anterioară, care lua orice ultim potrivit.
 function extractValidProductCode(rawText) {
   const cleanText = (rawText || '').toUpperCase();
-  const regexPatterns = [
-    /[A-Z]{2,6}[-–]?[0-9]{2,10}[A-Z0-9]*/g,
-    /[A-Z0-9]{1,6}[-–][A-Z0-9]{2,14}/g
-  ];
+  const regexPatterns = [ /[A-Z]{2,6}[-–]?[0-9]{2,10}[A-Z0-9]*/g, /[A-Z0-9]{1,6}[-–][A-Z0-9]{2,14}/g ];
   let candidates = new Set();
   regexPatterns.forEach(regex => {
     let matches = cleanText.match(regex) || [];
@@ -696,7 +684,7 @@ function extractValidProductCode(rawText) {
     if (score > bestScore) { bestScore = score; best = candidate; }
   });
   if (bestScore < 2) return null;
-  return correctConfusables(best);   // Punctul 1: încercăm corecția pe baza prefixelor cunoscute
+  return correctConfusables(best);
 }
 
 async function runOcr() {
@@ -705,14 +693,17 @@ async function runOcr() {
     setStatus('Atentie', 'Porneste mai intai scanarea camerei.', 'err');
     return;
   }
+  
+  // Utilizăm zona ajustabilă specifică pentru preluarea datelor OCR
   const cw = video.videoWidth;
   const ch = video.videoHeight;
-  const cropW = Math.floor(cw * 0.8);
-  const cropH = Math.floor(ch * 0.4);
+  const cropW = Math.floor(cw * (boxWidthPercent / 100));
+  const cropH = Math.floor(ch * (boxHeightPercent / 100));
   const sx = Math.floor((cw - cropW) / 2);
   const sy = Math.floor((ch - cropH) / 2);
+  
   const canvas = document.createElement('canvas');
-  canvas.width = cropW * 3;   // upscale mai mare = mai multe detalii pentru literele mici
+  canvas.width = cropW * 3;
   canvas.height = cropH * 3;
   const cx = canvas.getContext('2d');
   cx.imageSmoothingEnabled = true;
@@ -737,8 +728,6 @@ async function runOcr() {
       ocrWorker = await Tesseract.createWorker('eng');
       await ocrWorker.setParameters({
         tessedit_pageseg_mode: '6',
-        // Punctul 1: limităm alfabetul la ce apare realist pe etichete
-        // industriale — elimină o clasă întreagă de confuzii cu simboluri.
         tessedit_char_whitelist: 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-,./ '
       });
     }
@@ -771,7 +760,7 @@ async function runOcr() {
         }
       } else {
         lastOcrCandidate = null;
-        setStatus('Eroare', 'Text ilizibil. Muta camera intr-o zona cu lumina mai buna.', 'err');
+        setStatus('Eroare', 'Text ilizibil. Ajustează dimensiunea chenarului și lumina.', 'err');
         resumeAfterFailedOcr();
       }
     }
@@ -783,6 +772,7 @@ async function runOcr() {
     if (!isPaused) btnOcr.disabled = false;
   }
 }
+
 /* =====================================================================
    [E] AFIȘARE
    ===================================================================== */
@@ -797,7 +787,6 @@ function showResult(text, sursa) {
   websiteLink.className = 'website-link-box' + (a.website.direct ? '' : ' search');
   websiteLink.style.display = 'block';
 
-  // Punctul 3: butonul de căutare online — resetat la fiecare rezultat nou
   onlineBlurb.classList.remove('visible');
   onlineBlurbText.textContent = '';
   btnOnlineInfo.style.display = 'block';
@@ -827,13 +816,9 @@ function showResult(text, sursa) {
   resultSection.scrollIntoView({ behavior:'smooth', block:'start' });
 }
 
-// Plasa de siguranță OCR: utilizatorul corectează manual codul brut, apoi
-// recalculăm toate informațiile pornind de la textul corectat.
 btnRecalc.addEventListener('click', () => {
   const corrected = rawCodeInput.value.trim();
   if (!corrected) return;
-  // Dacă valoarea vine dintr-o citire OCR și utilizatorul a schimbat-o,
-  // reținem perechea "citire greșită -> corectare" pentru data viitoare.
   if (lastOcrCandidate && corrected.toUpperCase() !== lastOcrCandidate.toUpperCase()) {
     rememberCorrection(lastOcrCandidate, corrected);
     lastOcrCandidate = null;
@@ -848,8 +833,6 @@ btnClearOcrMemory.addEventListener('click', (e) => {
 });
 updateOcrMemoryLabel();
 
-// Punctul 3: descriere online, BEST-EFFORT, printr-un proxy CORS public.
-// Poate eșua (serviciu terț, gratuit, fără garanție) — tratăm eșecul elegant.
 async function fetchOnlineBlurb() {
   const url = btnOnlineInfo.dataset.url;
   if (!url) return;
