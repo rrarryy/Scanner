@@ -7,127 +7,336 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/html5-qrcode/2.3.8/html5-qrcode.min.js"></script>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
 <style>
+  /* ==========================================================
+     SISTEM DE DESIGN — "INSTRUMENT DE PRECIZIE"
+     Fundal cald, tip hârtie de fișă tehnică. Vizorul e tratat ca
+     o carcasă de instrument optic (telemetru), cu colțuri de
+     reticul. Rezultatul e tratat ca o fișă tehnică de componentă,
+     cu un "afișaj" tip LCD pentru codul citit. Doi accenți cu rol
+     diferit: chihlimbar (stare/acțiune) și albastru (achiziție/scan).
+     ========================================================== */
   :root {
-    --bg: #f2f4f7; --surface: #ffffff; --border: #dfe4ea;
-    --ink: #15212e; --ink-soft: #5b6875;
-    --primary: #0f4c81; --primary-dk: #0b3a63;
-    --success: #157f4d; --success-bg: #e7f4ee;
-    --danger: #b3261e; --danger-bg: #fbecea;
-    --warn: #b8860b; --warn-bg: #fff8dc;
-    --neutral-bg: #eef1f5;
-    --radius: 12px;
-    --shadow: 0 1px 2px rgba(21,33,46,.06), 0 4px 16px rgba(21,33,46,.06);
-    --sans: "Inter", Arial, sans-serif;
-    --mono: "SF Mono", "Cascadia Mono", Consolas, monospace;
+    --paper:      #f5f3ec;
+    --surface:    #ffffff;
+    --surface-2:  #faf8f1;
+    --graphite:   #1d232a;
+    --graphite-2: #262e37;
+    --ink:        #20262c;
+    --ink-soft:   #6b7178;
+    --border:     #e3ddd0;
+    --border-dark: rgba(255,255,255,.09);
+    --amber:      #b9791a;
+    --amber-glow: #f0a93e;
+    --blue:       #1f6fb5;
+    --blue-glow:  #4d9de0;
+    --ok:         #3f7d4f; --ok-bg: #e8f2ea;
+    --danger:     #a83f2e; --danger-bg: #fbece8;
+    --warn:       #a9740b; --warn-bg: #fdf3df;
+    --radius-lg: 16px; --radius-md: 10px; --radius-sm: 6px;
+    --shadow-card: 0 1px 2px rgba(32,38,44,.05), 0 10px 28px -10px rgba(32,38,44,.16);
+    --font-display: "Space Grotesk", "Inter", sans-serif;
+    --font-sans: "Inter", -apple-system, sans-serif;
+    --font-mono: "SF Mono", "Cascadia Mono", Consolas, monospace;
   }
   * { box-sizing: border-box; margin: 0; padding: 0; }
-  body { background: var(--bg); color: var(--ink); font-family: var(--sans); -webkit-font-smoothing: antialiased; min-height: 100vh; }
-  .topbar { background: var(--surface); border-bottom: 1px solid var(--border); padding: 14px 20px; display: flex; align-items: center; gap: 12px; }
-  .logo { width: 34px; height: 34px; border-radius: 8px; background: var(--primary); color: #fff; display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: 15px; flex-shrink: 0; }
-  .topbar h1 { font-size: 15px; font-weight: 600; }
-  .topbar .tag { font-size: 12px; color: var(--ink-soft); margin-top: 1px; }
+  body {
+    background:
+      radial-gradient(1200px 500px at 50% -10%, rgba(31,111,181,.06), transparent 60%),
+      var(--paper);
+    color: var(--ink);
+    font-family: var(--font-sans);
+    -webkit-font-smoothing: antialiased;
+    min-height: 100vh;
+  }
+  ::selection { background: rgba(31,111,181,.18); }
+
+  /* ---------- Placă nominală (topbar) ---------- */
+  .topbar {
+    background: var(--graphite);
+    padding: 14px 20px;
+    display: flex; align-items: center; gap: 12px;
+    position: sticky; top: 0; z-index: 20;
+    box-shadow: 0 1px 0 var(--border-dark), 0 6px 18px -8px rgba(0,0,0,.4);
+  }
+  .logo {
+    width: 36px; height: 36px; border-radius: 9px; flex-shrink: 0;
+    background: linear-gradient(155deg, var(--graphite-2), #10151a);
+    border: 1px solid var(--border-dark);
+    display: flex; align-items: center; justify-content: center;
+  }
+  .logo svg { width: 19px; height: 19px; }
+  .topbar h1 {
+    font-family: var(--font-display); font-size: 15px; font-weight: 600;
+    color: #f2f0e8; letter-spacing: .3px;
+  }
+  .topbar .tag {
+    font-size: 11px; color: #8b95a0; margin-top: 2px;
+    text-transform: uppercase; letter-spacing: .6px; font-weight: 500;
+  }
+
   main { max-width: 640px; margin: 0 auto; padding: 24px 16px 48px; }
-  .card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); box-shadow: var(--shadow); overflow: hidden; margin-bottom: 16px; }
-  .card-head { padding: 14px 18px; border-bottom: 1px solid var(--border); display: flex; align-items: center; justify-content: space-between; gap: 10px; }
-  .card-head h2 { font-size: 13px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.8px; color: var(--ink-soft); }
+
+  /* ---------- Carduri ---------- */
+  .card {
+    background: var(--surface); border: 1px solid var(--border);
+    border-radius: var(--radius-lg); box-shadow: var(--shadow-card);
+    overflow: hidden; margin-bottom: 18px;
+  }
+  .card-head {
+    padding: 13px 18px; display: flex; align-items: center; justify-content: space-between; gap: 10px;
+    border-bottom: 1px solid var(--border);
+  }
+  .card-head h2 {
+    font-family: var(--font-display); font-size: 12.5px; font-weight: 600;
+    text-transform: uppercase; letter-spacing: 1.2px; color: var(--ink-soft);
+    display: flex; align-items: center; gap: 8px;
+  }
+  .card-head h2 svg { width: 14px; height: 14px; opacity: .55; flex-shrink: 0; }
   .card-body { padding: 18px; }
-  .pill { font-size: 12px; font-weight: 600; padding: 4px 10px; border-radius: 999px; display: inline-flex; align-items: center; gap: 6px; background: var(--neutral-bg); color: var(--ink-soft); white-space: nowrap; }
-  .pill::before { content: ""; width: 7px; height: 7px; border-radius: 50%; background: currentColor; }
-  .pill.ok { background: var(--success-bg); color: var(--success); }
-  .pill.err { background: var(--danger-bg); color: var(--danger); }
-  .pill.warn { background: var(--warn-bg); color: var(--warn); }
-  
-  .viewfinder { position: relative; background: #0e1319; height: 260px; display: flex; align-items: center; justify-content: center; overflow: hidden; border-radius: 8px; }
+
+  /* Placa senzorului: tratată ca o carcasă de instrument (fundal grafit) */
+  .sensor-head { background: var(--graphite-2); border-bottom: 1px solid var(--border-dark); }
+  .sensor-head h2 { color: #cfd6dc; }
+  .sensor-head h2 svg { opacity: .7; stroke: #cfd6dc; }
+
+  /* ---------- Pastile de status ---------- */
+  .pill {
+    font-size: 11.5px; font-weight: 600; padding: 4px 10px; border-radius: 999px;
+    display: inline-flex; align-items: center; gap: 6px;
+    background: var(--surface-2); color: var(--ink-soft); white-space: nowrap;
+    border: 1px solid var(--border);
+  }
+  .sensor-head .pill { background: rgba(255,255,255,.06); border-color: var(--border-dark); color: #b7c0c8; }
+  .pill::before { content: ""; width: 6px; height: 6px; border-radius: 50%; background: currentColor; flex-shrink:0; }
+  .pill.ok   { background: var(--ok-bg); color: var(--ok); border-color: transparent; }
+  .pill.err  { background: var(--danger-bg); color: var(--danger); border-color: transparent; }
+  .pill.warn { background: var(--warn-bg); color: var(--warn); border-color: transparent; }
+  .pill.ok::before { animation: pulse-dot 1.8s ease-in-out infinite; }
+  @keyframes pulse-dot { 0%,100%{opacity:1;} 50%{opacity:.35;} }
+  @media (prefers-reduced-motion: reduce) { .pill.ok::before { animation: none; } }
+
+  /* ---------- Vizor: carcasă de instrument optic ---------- */
+  .viewfinder {
+    position: relative;
+    background:
+      radial-gradient(120% 140% at 50% 0%, #232b33, #0c1014 78%);
+    height: 260px; display: flex; align-items: center; justify-content: center;
+    overflow: hidden;
+  }
+  .viewfinder::before {
+    /* rama interioara, ca un bezel adancit */
+    content: ""; position: absolute; inset: 6px; border-radius: 8px;
+    box-shadow: inset 0 0 0 1px rgba(255,255,255,.05), inset 0 2px 10px rgba(0,0,0,.4);
+    pointer-events: none; z-index: 4;
+  }
   #reader { width: 100%; height: 100%; display: flex; align-items: center; justify-content: center; }
   #reader video { object-fit: cover !important; min-height: 100%; min-width: 100%; }
   .viewfinder.mirror #reader video { transform: scaleX(-1); }
-
   #qr-shaded-region { display: none !important; }
-  
-  .paused-overlay { position: absolute; inset: 0; background: rgba(14,19,25,0.82); display: none; flex-direction: column; align-items: center; justify-content: center; color: white; z-index: 10; font-size: 14px; font-weight: 500; gap: 6px; text-align: center; padding: 20px; }
+
+  .paused-overlay {
+    position: absolute; inset: 0; background: rgba(13,17,21,0.86);
+    display: none; flex-direction: column; align-items: center; justify-content: center;
+    color: #f2f0e8; z-index: 10; font-size: 13.5px; font-weight: 500; gap: 6px;
+    text-align: center; padding: 20px;
+  }
   .viewfinder.is-paused .paused-overlay { display: flex; }
-  .placeholder { position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 8px; text-align: center; padding: 24px; color: #94a1b0; font-size: 13.5px; }
-  .placeholder .icon { font-size: 30px; opacity: .8; }
-  
-  .scanline { position: absolute; left: 4%; right: 4%; height: 2px; background: linear-gradient(90deg, transparent, #4da3ff, transparent); box-shadow: 0 0 10px 1px rgba(77,163,255,.5); animation: sweep 2.6s ease-in-out infinite; display: none; z-index: 5; }
+  .placeholder {
+    position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center;
+    gap: 10px; text-align: center; padding: 24px; color: #808a93; font-size: 13px; z-index: 3;
+  }
+  .placeholder .icon { width: 30px; height: 30px; opacity: .55; }
+
+  .scanline {
+    position: absolute; left: 4%; right: 4%; height: 2px;
+    background: linear-gradient(90deg, transparent, var(--blue-glow), transparent);
+    box-shadow: 0 0 12px 2px rgba(77,157,224,.55);
+    animation: sweep 2.6s ease-in-out infinite; display: none; z-index: 5;
+  }
   .viewfinder.active:not(.is-paused) .scanline { display: block; }
   @keyframes sweep { 0%,100% { top: 8%; } 50% { top: 92%; } }
-  
-  .controls { display: flex; gap: 10px; flex-wrap: wrap; }
-  select, button { font-family: var(--sans); font-size: 14px; font-weight: 500; border-radius: 8px; border: 1px solid var(--border); padding: 10px 14px; background: var(--surface); color: var(--ink); cursor: pointer; }
-  select { flex: 1 1 220px; }
-  button:disabled { opacity: .45; cursor: not-allowed; }
-  .btn-primary { background: var(--primary); border-color: var(--primary); color: #fff; font-weight: 600; flex: 1 1 130px; }
-  .btn-primary:disabled { opacity: .45; }
-  #btnStop { display: none; flex: 1 1 110px; color: var(--danger); border-color: var(--danger); font-weight: 600; }
-  #btnOcr { display: none; flex: 1 1 160px; color: var(--primary); border-color: var(--primary); font-weight: 600; }
-  #btnOcr:hover:not(:disabled) { background: #e8f0f8; }
-  
-  .options-row { margin-top: 10px; padding-top: 10px; border-top: 1px solid var(--border); display: flex; align-items: center; justify-content: space-between; gap: 10px; flex-wrap: wrap; }
+  @media (prefers-reduced-motion: reduce) { .scanline { animation: none; top: 50%; } }
 
+  /* ---------- Zona de scanare: reticul cu colțuri, redimensionabil ---------- */
   .box-preview {
     position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);
-    border: 2px dashed rgba(77,163,255,.9); border-radius: 6px;
-    z-index: 6; box-shadow: 0 0 0 2000px rgba(14,19,25,.4);
-    pointer-events: none; 
-    display: none;
+    border: 1.5px solid rgba(77,157,224,.65); border-radius: 4px;
+    z-index: 6; box-shadow: 0 0 0 2000px rgba(9,12,15,.46);
+    pointer-events: none; display: none;
   }
   .resize-handle {
     position: absolute; width: 44px; height: 44px;
     background: transparent; border: none; box-shadow: none; z-index: 7;
-    pointer-events: auto; 
+    pointer-events: auto;
   }
   .rh-tl { top: -22px; left: -22px; cursor: nwse-resize; }
   .rh-tr { top: -22px; right: -22px; cursor: nesw-resize; }
   .rh-bl { bottom: -22px; left: -22px; cursor: nesw-resize; }
   .rh-br { bottom: -22px; right: -22px; cursor: nwse-resize; }
-  .drag-hint { font-size: 11.5px; color: var(--ink-soft); margin-top: 6px; text-align: center; }
+  /* colțurile de reticul devin VIZIBILE — semnalul clar că se poate trage de ele */
+  .resize-handle::after {
+    content: ""; position: absolute; top: 12px; left: 12px; width: 20px; height: 20px;
+    border-color: var(--amber-glow); transition: transform .15s ease;
+  }
+  .rh-tl::after { border-top: 2.5px solid var(--amber-glow); border-left: 2.5px solid var(--amber-glow); border-radius: 3px 0 0 0; }
+  .rh-tr::after { border-top: 2.5px solid var(--amber-glow); border-right: 2.5px solid var(--amber-glow); border-radius: 0 3px 0 0; left: auto; right: 12px; }
+  .rh-bl::after { border-bottom: 2.5px solid var(--amber-glow); border-left: 2.5px solid var(--amber-glow); border-radius: 0 0 0 3px; top: auto; bottom: 12px; }
+  .rh-br::after { border-bottom: 2.5px solid var(--amber-glow); border-right: 2.5px solid var(--amber-glow); border-radius: 0 0 3px 0; top: auto; left: auto; bottom: 12px; right: 12px; }
+  .resize-handle:active::after { transform: scale(1.15); }
+  .viewfinder.active .resize-handle::after { animation: bracket-glow 2.2s ease-in-out infinite; }
+  @keyframes bracket-glow { 0%,100% { opacity: 1; } 50% { opacity: .55; } }
+  @media (prefers-reduced-motion: reduce) { .viewfinder.active .resize-handle::after { animation: none; } }
+  .drag-hint { font-size: 11.5px; color: var(--ink-soft); margin-top: 8px; text-align: center; }
 
+  /* ---------- Controale: butoane tip "tastă de instrument" ---------- */
+  .controls { display: flex; gap: 10px; flex-wrap: wrap; }
+  select, button {
+    font-family: var(--font-sans); font-size: 13.5px; font-weight: 600;
+    border-radius: var(--radius-sm); border: 1px solid var(--border);
+    padding: 11px 14px; background: var(--surface); color: var(--ink); cursor: pointer;
+    box-shadow: 0 1px 0 rgba(32,38,44,.06);
+    transition: transform .1s ease, box-shadow .1s ease, background .15s ease, border-color .15s ease;
+  }
+  select { flex: 1 1 220px; font-weight: 500; }
+  button:hover:not(:disabled) { border-color: #c9c2b0; }
+  button:active:not(:disabled) { transform: translateY(1px); box-shadow: none; }
+  button:disabled { opacity: .42; cursor: not-allowed; box-shadow: none; }
+
+  .btn-primary {
+    background: linear-gradient(180deg, #2a80c4, var(--blue)); border-color: var(--blue);
+    color: #fff; flex: 1 1 130px; box-shadow: 0 1px 0 rgba(255,255,255,.18) inset, 0 2px 6px rgba(31,111,181,.35);
+  }
+  .btn-primary::before { content: '▶'; margin-right: 7px; font-size: 10px; }
+  .btn-primary:hover:not(:disabled) { background: linear-gradient(180deg, #3189cf, #1a5f9c); }
+  .btn-primary:disabled { background: var(--surface); color: var(--ink-soft); border-color: var(--border); }
+  .btn-primary:disabled::before { display: none; }
+
+  #btnStop { flex: 1 1 110px; color: var(--danger); border-color: #e3c3ba; display: none; }
+  #btnStop::before { content: '■'; margin-right: 7px; font-size: 9px; }
+  #btnStop:hover:not(:disabled) { background: var(--danger-bg); }
+
+  #btnOcr { flex: 1 1 160px; color: var(--blue); border-color: #bcd6ea; display: none; }
+  #btnOcr::before { content: '⌐◦'; margin-right: 7px; font-weight: 700; letter-spacing:-1px; }
+  #btnOcr:hover:not(:disabled) { background: #eaf3fa; }
+
+  .options-row {
+    margin-top: 12px; padding-top: 12px; border-top: 1px solid var(--border);
+    display: flex; align-items: center; justify-content: space-between; gap: 10px; flex-wrap: wrap;
+  }
+  .options-row span#statusDetail { font-family: var(--font-mono); font-size: 11.5px; color: var(--ink-soft); font-weight: 500 !important; }
+
+  /* ---------- Rezultat: fișă tehnică de componentă ---------- */
   #resultSection { display: none; }
   #resultSection.visible { display: block; }
-  .website-link-box { display: block; background: var(--primary); color: white; text-decoration: none; padding: 12px; border-radius: 8px; text-align: center; font-weight: 600; margin-bottom: 16px; font-size: 14px; word-break: break-word; }
-  .website-link-box:hover { background: var(--primary-dk); }
-  .website-link-box.search { background: var(--surface); color: var(--primary); border: 1px solid var(--primary); }
-  .data-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; background: var(--neutral-bg); padding: 16px; border-radius: 8px; border: 1px solid var(--border); margin-bottom: 16px; }
-  .data-item { display: flex; flex-direction: column; gap: 4px; }
-  .data-label { font-size: 11px; text-transform: uppercase; color: var(--ink-soft); font-weight: 600; letter-spacing: 0.5px; }
-  .data-value { font-size: 14px; font-weight: 500; color: var(--ink); word-break: break-word; }
+
+  .website-link-box {
+    display: flex; align-items: center; justify-content: center; gap: 8px;
+    background: var(--surface-2); color: var(--blue); text-decoration: none;
+    padding: 12px; border-radius: var(--radius-sm); border: 1px dashed #bcd6ea;
+    text-align: center; font-weight: 600; margin-bottom: 16px; font-size: 13.5px; word-break: break-word;
+    transition: background .15s ease;
+  }
+  .website-link-box::before { content: '⌕'; font-weight: 700; }
+  .website-link-box:hover { background: #eaf3fa; }
+  .website-link-box.search { }
+
+  /* "Fișă tehnică" — tabel de specificații */
+  .data-grid {
+    display: grid; grid-template-columns: 1fr 1fr; gap: 0;
+    background: var(--surface-2); border-radius: var(--radius-md);
+    border: 1px solid var(--border); margin-bottom: 16px; overflow: hidden;
+  }
+  .data-item {
+    display: flex; flex-direction: column; gap: 5px;
+    padding: 12px 14px; border-bottom: 1px solid var(--border);
+  }
+  .data-item:nth-child(odd):not(.full-width) { border-right: 1px solid var(--border); }
   .data-item.full-width { grid-column: span 2; }
-  .btn-next-scan { width: 100%; background: var(--success); border-color: var(--success); color: white; padding: 14px; font-size: 16px; font-weight: 700; margin-top: 8px; box-shadow: 0 4px 6px rgba(21,127,77,0.2); transition: transform 0.1s; border-radius: 8px; cursor: pointer; }
-  .btn-next-scan:active { transform: scale(0.98); }
-  .raw-edit-row { display: flex; gap: 8px; align-items: center; margin-bottom: 4px; }
-  #rawCodeInput { font-family: var(--mono); font-size: 14px; flex: 1; padding: 8px 10px; border: 1px solid var(--border); border-radius: 6px; background: var(--surface); color: var(--ink); font-weight: bold;}
-  #rawCodeInput:focus { outline: 2px solid var(--primary); outline-offset: 1px; }
-  #btnRecalc { font-size: 12.5px; padding: 8px 12px; white-space: nowrap; }
-  .field-hint { font-size: 11.5px; color: var(--ink-soft); margin-bottom: 14px; }
-  .btn-online { width: 100%; background: var(--surface); border: 1px dashed var(--primary); color: var(--primary); padding: 10px; border-radius: 8px; font-size: 13px; font-weight: 600; cursor: pointer; margin-bottom: 10px; }
-  .btn-online:hover:not(:disabled) { background: #e8f0f8; }
-  
-  .online-blurb { background: var(--success-bg); border: 1px solid var(--success); border-radius: 8px; padding: 12px; font-size: 13.5px; color: var(--ink); margin-top: 10px; display: none; }
+  .data-item:last-child { border-bottom: none; }
+  .data-label {
+    font-size: 10.5px; text-transform: uppercase; color: var(--ink-soft); font-weight: 700;
+    letter-spacing: .7px; display: flex; align-items: center; gap: 5px;
+  }
+  .data-label::before { opacity: .6; font-size: 11px; }
+  .dl-producator::before { content: '⚙'; }
+  .dl-lot::before { content: '#'; }
+  .dl-domeniu::before { content: '◫'; }
+  .dl-detalii::before { content: 'ℹ'; }
+  .data-value { font-size: 14px; font-weight: 500; color: var(--ink); word-break: break-word; }
+
+  /* Cod piesă = "afișaj LCD" al instrumentului */
+  .raw-edit-row {
+    display: flex; gap: 8px; align-items: center; margin-bottom: 6px;
+    background: #1b241f; padding: 4px; border-radius: var(--radius-sm);
+    border: 1px solid #2c3830;
+  }
+  #rawCodeInput {
+    font-family: var(--font-mono); font-size: 15px; font-weight: 700; letter-spacing: .5px;
+    flex: 1; padding: 9px 10px; border: none; border-radius: 4px;
+    background: transparent; color: #8beea3; text-shadow: 0 0 8px rgba(139,238,163,.35);
+  }
+  #rawCodeInput:focus { outline: none; background: rgba(139,238,163,.06); }
+  #btnRecalc {
+    font-size: 12px; padding: 8px 12px; white-space: nowrap;
+    background: #26332b; color: #8beea3; border: 1px solid #384a3d;
+  }
+  #btnRecalc::before { content: '↻'; margin-right: 5px; }
+  #btnRecalc:hover:not(:disabled) { background: #2e402f; }
+  .field-hint { font-size: 11px; color: var(--ink-soft); margin-bottom: 14px; }
+
+  .btn-next-scan {
+    width: 100%;
+    background: linear-gradient(180deg, #4a9a5f, var(--ok)); border-color: var(--ok);
+    color: white; padding: 14px; font-size: 14.5px; font-weight: 700; margin-top: 4px;
+    box-shadow: 0 1px 0 rgba(255,255,255,.2) inset, 0 3px 10px rgba(63,125,79,.3);
+    letter-spacing: .4px;
+  }
+  .btn-next-scan::before { content: '↷ '; }
+  .btn-next-scan:active { transform: translateY(1px); }
+
+  /* Notă tehnică — "la ce se folosește" */
+  .online-blurb {
+    background: var(--warn-bg); border: 1px solid #ecd9a6; border-radius: var(--radius-md);
+    padding: 12px 14px; font-size: 13px; color: var(--ink); margin-top: 4px; margin-bottom: 14px; display: none;
+    line-height: 1.5;
+  }
   .online-blurb.visible { display: block; }
-  .online-blurb strong { color: var(--success); display: block; margin-bottom: 4px; font-size: 11px; text-transform: uppercase; letter-spacing: 0.5px;}
+  .online-blurb strong {
+    color: var(--warn); display: flex; align-items: center; gap: 6px;
+    margin-bottom: 5px; font-size: 10.5px; text-transform: uppercase; letter-spacing: .7px;
+  }
+  .online-blurb strong::before { content: '⚑'; }
 </style>
 </head>
 <body>
 <div class="topbar">
-  <div class="logo">▦</div>
+  <div class="logo">
+    <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+      <circle cx="12" cy="12" r="9" stroke="#f0a93e" stroke-width="1.6"/>
+      <circle cx="12" cy="12" r="3.4" fill="#f0a93e"/>
+      <path d="M12 3v3M12 18v3M3 12h3M18 12h3" stroke="#f0a93e" stroke-width="1.6" stroke-linecap="round"/>
+    </svg>
+  </div>
   <div>
     <h1>Cititor Industrial</h1>
-    <div class="tag">Scanare inteligenta pentru piese industriale</div>
+    <div class="tag">Scanare inteligentă pentru piese industriale</div>
   </div>
 </div>
 <main>
   <div class="card">
-    <div class="card-head">
-      <h2>Senzor Optic</h2>
+    <div class="card-head sensor-head">
+      <h2>
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><circle cx="12" cy="13" r="4"/><path d="M4 8h3l1.5-2h7L17 8h3a1 1 0 0 1 1 1v9a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V9a1 1 0 0 1 1-1z"/></svg>
+        Senzor Optic
+      </h2>
       <span class="pill" id="statusPill">In asteptare</span>
     </div>
     <div class="viewfinder" id="viewfinder">
       <div id="reader"></div>
       <div class="placeholder" id="placeholder">
-        <div class="icon">📷</div>
+        <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4"><circle cx="12" cy="13" r="4"/><path d="M4 8h3l1.5-2h7L17 8h3a1 1 0 0 1 1 1v9a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V9a1 1 0 0 1 1-1z"/></svg>
         <div id="phText">Asteapta initializarea sistemelor...</div>
       </div>
       <div class="scanline"></div>
@@ -139,7 +348,7 @@
       </div>
       <div class="paused-overlay">
         <div>Analiza oprita.</div>
-        <div style="font-size: 12px; font-weight: 400; opacity: 0.8;">Datele au fost preluate — apasa „URMATOAREA SCANARE".</div>
+        <div style="font-size: 12px; font-weight: 400; opacity: 0.75;">Datele au fost preluate — apasa „URMATOAREA SCANARE".</div>
       </div>
     </div>
     <div class="card-body">
@@ -149,55 +358,56 @@
         <button id="btnStop">Opreste</button>
         <button id="btnOcr">Citeste text (OCR)</button>
       </div>
-      <div class="drag-hint" id="dragHint" style="display:none;">Trage de colturile liniei punctate pentru a ajusta zona de scanare.</div>
+      <div class="drag-hint" id="dragHint" style="display:none;">Trage de colțurile chihlimbarii pentru a ajusta zona de scanare.</div>
       <div class="options-row" style="border-top:none; padding-top:6px; margin-top:10px;">
-        <span style="font-size: 12px; color: var(--ink-soft); font-weight: bold;" id="statusDetail">Incarcare...</span>
+        <span id="statusDetail">Incarcare...</span>
       </div>
     </div>
   </div>
   <div class="card" id="resultSection">
     <div class="card-head">
-      <h2>Date Identificate</h2>
+      <h2>
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M9 3h6a1 1 0 0 1 1 1v2H8V4a1 1 0 0 1 1-1z"/><path d="M6 6h12v14a1 1 0 0 1-1 1H7a1 1 0 0 1-1-1V6z"/><path d="M9 11h6M9 15h4"/></svg>
+        Date Identificate
+      </h2>
       <span class="pill ok" id="resultFormat">Tip Cod</span>
     </div>
     <div class="card-body">
-      <a href="#" target="_blank" rel="noopener" class="website-link-box search" id="websiteLink" style="display:none;">Cauta Datasheet ↗</a>
-      
+      <a href="#" target="_blank" rel="noopener" class="website-link-box search" id="websiteLink" style="display:none;">Cauta Datasheet</a>
+
       <div class="data-grid">
         <div class="data-item full-width">
           <span class="data-label">Cod Piesa Identificat</span>
           <div class="raw-edit-row">
             <input type="text" id="rawCodeInput" value="" spellcheck="false">
-            <button id="btnRecalc">Aplica Corectie</button>
+            <button id="btnRecalc">Aplica</button>
           </div>
         </div>
-        
+
         <div class="data-item">
-          <span class="data-label">Producator</span>
+          <span class="data-label dl-producator">Producator</span>
           <span class="data-value" id="infoProducator">Necunoscut</span>
         </div>
         <div class="data-item">
-          <span class="data-label">Lot / Serie</span>
+          <span class="data-label dl-lot">Lot / Serie</span>
           <span class="data-value" id="infoLot">Necunoscut</span>
         </div>
-        
+
         <div class="data-item full-width" id="infoDomeniuRow" style="display:none;">
-          <span class="data-label">Domeniu producator</span>
+          <span class="data-label dl-domeniu">Domeniu producator</span>
           <span class="data-value" id="infoDomeniu">—</span>
         </div>
-        
+
         <div class="data-item full-width">
-          <span class="data-label">Detalii Suplimentare din cod</span>
+          <span class="data-label dl-detalii">Detalii Suplimentare din cod</span>
           <span class="data-value" id="infoDetalii">Nicio informatie in cod.</span>
         </div>
       </div>
-      
-      <!-- Zona speciala pentru afisarea utilizarii piesei -->
+
       <div class="online-blurb" id="utilizareBlurb">
-        <strong>La ce este utilizata aceasta piesa:</strong>
+        <strong>La ce este utilizata aceasta piesa</strong>
         <div id="utilizareText">Se analizeaza...</div>
       </div>
-
       <button class="btn-next-scan" id="btnNextScan">URMATOAREA SCANARE</button>
     </div>
   </div>
@@ -230,7 +440,6 @@ const rawCodeInput = document.getElementById('rawCodeInput');
 const btnRecalc = document.getElementById('btnRecalc');
 const utilizareBlurb = document.getElementById('utilizareBlurb');
 const utilizareText = document.getElementById('utilizareText');
-
 let scanner = null;
 let running = false;
 let isPaused = false;
@@ -239,13 +448,11 @@ let boxWidthPercent = 65;
 let boxHeightPercent = 45;  
 let lastFormatName = 'Cod Standard';
 let lastOcrCandidate = null;
-
 function setStatus(pillText, detailText, kind) {
   statusPill.textContent = pillText;
   statusPill.className = 'pill' + (kind ? ' ' + kind : '');
   statusDetail.textContent = detailText || '—';
 }
-
 const FORMATS = [
   Html5QrcodeSupportedFormats.QR_CODE, Html5QrcodeSupportedFormats.DATA_MATRIX,
   Html5QrcodeSupportedFormats.AZTEC, Html5QrcodeSupportedFormats.PDF_417,
@@ -254,7 +461,6 @@ const FORMATS = [
   Html5QrcodeSupportedFormats.CODE_128, Html5QrcodeSupportedFormats.CODE_39,
   Html5QrcodeSupportedFormats.ITF
 ];
-
 /* =====================================================================
    [B] BAZA DE DATE INTERNA PENTRU PIESE INDUSTRIALE
    ===================================================================== */
@@ -274,7 +480,6 @@ const BRANDS = [
   { re: /LOVATO/i, name: 'Lovato Electric', url: 'https://www.lovatoelectric.com', domeniu: 'Aparataj electric de joasa tensiune' },
   { re: /MEAN\s*WELL/i, name: 'Mean Well', url: 'https://www.meanwell.com', domeniu: 'Surse de alimentare in comutatie (SMPS)' }
 ];
-
 const PART_HINTS = [
   // --- SIEMENS ---
   { re: /^(6ES7|S7-1200|S7-1500)/, name: 'Siemens', utilizare: 'Modul PLC (Control Logic Programabil) seria SIMATIC S7. Creierul masinariilor automatizate, folosit pentru a rula logica de control (TIA Portal).' },
@@ -290,7 +495,6 @@ const PART_HINTS = [
   { re: /^(A9F|A9N|iC60)/, name: 'Schneider Electric', utilizare: 'Intrerupator automat miniatural (MCB - Siguranta automata). Protejeaza circuitele electrice de iluminat si prize impotriva scurtcircuitelor.' },
   { re: /^RXM/, name: 'Schneider Electric', utilizare: 'Releu miniatura plug-in seria Zelio. Folosit pentru multiplicarea contactelor, izolarea galvanica a semnalelor catre PLC si comanda sarcinilor mici.' },
   { re: /^(XB4|XB5)/, name: 'Schneider Electric', utilizare: 'Aparataj de comanda pe panou (butoane cu retinere/revenire, ciuperca de avarie, lampi LED) seria Harmony.' },
-
   // --- EATON ---
   { re: /^PKZM/, name: 'Eaton', utilizare: 'Disjunctor pentru protectia motorului. Dispozitiv robust ce contine o protectie termica (ajustabila) si una magnetica (scurtcircuit).' },
   { re: /^(DILM|DILA)/, name: 'Eaton', utilizare: 'Contactor seria DIL. Un standard in industrie pentru separarea galvanica si actionarea in forta a echipamentelor industriale.' },
@@ -300,21 +504,16 @@ const PART_HINTS = [
   { re: /^(CJ1|CJ2|CP1)/, name: 'Omron', utilizare: 'Modul PLC (Controler Logic Programabil). Unitate de procesare compacta folosita in automatizari flexibile de utilaje.' },
   { re: /^(MY2|MY4|G2R)/, name: 'Omron', utilizare: 'Releu de uz general. Extrem de intalnit in dulapurile de automatizare pentru izolarea circuitelor de intrare/iesire de forta fata de componentele delicate (PLC).' },
   { re: /^E3Z/, name: 'Omron', utilizare: 'Senzor fotoelectric standard. Echipament folosit pe benzile transportoare pentru a detecta de la distanta prezenta sau absenta unui produs, functionand pe baza unui fascicul de lumina.' },
-
   // --- PANASONIC ---
   { re: /^AFPX/, name: 'Panasonic', utilizare: 'Controler logic programabil (PLC) seria FP-X. Ideal pentru aplicatii de control cu un numar mic si mediu de intrari/iesiri digitale.' },
-
   // --- MEAN WELL ---
   { re: /^(NDR|MDR|HDR|SDR|LRS)/, name: 'Mean Well', utilizare: 'Sursa de alimentare in comutatie (Switching Power Supply). Transforma curentul alternativ din retea in curent continuu stabilizat, necesar sistemelor de control.' },
-
   // --- GENERIC FALLBACK ---
   { re: /^[A-Z0-9]+/, name: null, utilizare: 'Nu exista date clare despre aceasta piesa in memoria offline. Deschideti fisa tehnica apasand butonul albastru de sus pentru a afla domeniul de utilizare.' }
 ];
-
 const MH10_DI = { '1P':'Cod produs (producator)','2P':'Revizie produs','P':'Cod produs (client)','Q':'Cantitate','1T':'Lot fabricatie','T':'Lot fabricatie','S':'Numar de serie','1S':'Numar de serie','4L':'Tara de origine','16D':'Data fabricatiei','9D':'Data','6D':'Data','D':'Data','1V':'Producator (ID)','V':'Producator (ID)','K':'Comanda / ordin' };
 const MH10_KEYS = Object.keys(MH10_DI).sort((a,b)=>b.length-a.length);
 const COUNTRIES = { JP:'Japonia',DE:'Germania',CN:'China',US:'SUA',RO:'Romania',IT:'Italia',FR:'Franta',GB:'Marea Britanie',PL:'Polonia',CZ:'Cehia',HU:'Ungaria',TR:'Turcia',KR:'Coreea de Sud',TW:'Taiwan',NL:'Olanda',CH:'Elvetia',AT:'Austria',ES:'Spania',SE:'Suedia',BE:'Belgia',IN:'India',MX:'Mexic' };
-
 function gs1Country(ean) {
   const p = parseInt(ean.substring(0,3),10);
   const R = [[0,139,'SUA / Canada'],[300,379,'Franta'],[380,380,'Bulgaria'],[383,383,'Slovenia'],[385,385,'Croatia'],[400,440,'Germania'],[450,459,'Japonia'],[460,469,'Rusia'],[471,471,'Taiwan'],[489,489,'Hong Kong'],[490,499,'Japonia'],[500,509,'Marea Britanie'],[520,521,'Grecia'],[540,549,'Belgia / Luxemburg'],[560,560,'Portugalia'],[570,579,'Danemarca'],[590,590,'Polonia'],[594,594,'Romania'],[599,599,'Ungaria'],[640,649,'Finlanda'],[690,699,'China'],[700,709,'Norvegia'],[730,739,'Suedia'],[760,769,'Elvetia'],[800,839,'Italia'],[840,849,'Spania'],[858,858,'Slovacia'],[859,859,'Cehia'],[860,860,'Serbia'],[868,869,'Turcia'],[870,879,'Olanda'],[880,881,'Coreea de Sud'],[885,885,'Thailanda'],[890,890,'India'],[893,893,'Vietnam'],[900,919,'Austria'],[930,939,'Australia'],[955,955,'Malaezia']];
@@ -361,7 +560,6 @@ function parseGS1(text) {
   }
   return null;
 }
-
 function analyzeCode(text, formatName) {
   const fields=[]; let productCode=null, standard=null, website=null, brandName=null, brandDomeniu=null, infoUtilizare=null;
   if (/^https?:\/\//i.test(text)) {
@@ -405,7 +603,6 @@ function analyzeCode(text, formatName) {
   
   return { fields, website, brandName, brandDomeniu, productCode: searchCode, infoUtilizare, isUrl:/^https?:\/\//i.test(text) };
 }
-
 /* =====================================================================
    [C] PORNIRE, SCANARE, PAUZA & REDIMENSIONARE DRAG
    ===================================================================== */
@@ -433,7 +630,6 @@ async function bootSystem() {
   btnStart.disabled = false;
   applyBoxCSS(); 
 }
-
 let isResizing = false;
 const handles = document.querySelectorAll('.resize-handle');
 handles.forEach(h => {
@@ -444,7 +640,6 @@ document.addEventListener('mousemove', dragMove);
 document.addEventListener('touchmove', dragMove, {passive: false});
 document.addEventListener('mouseup', dragEnd);
 document.addEventListener('touchend', dragEnd);
-
 function dragStart(e) {
     if (e.target.classList.contains('resize-handle')) {
         isResizing = true;
@@ -456,20 +651,15 @@ function dragMove(e) {
     e.preventDefault();
     let clientX = e.type.includes('mouse') ? e.clientX : e.touches[0].clientX;
     let clientY = e.type.includes('mouse') ? e.clientY : e.touches[0].clientY;
-
     const viewRect = viewfinder.getBoundingClientRect();
     const centerX = viewRect.left + viewRect.width / 2;
     const centerY = viewRect.top + viewRect.height / 2;
-
     let newW = Math.abs(clientX - centerX) * 2;
     let newH = Math.abs(clientY - centerY) * 2;
-
     const viewW = viewRect.width;
     const viewH = viewRect.height;
-
     newW = Math.max(60, Math.min(newW, viewW * 0.95));
     newH = Math.max(60, Math.min(newH, viewH * 0.95));
-
     boxWidthPercent = (newW / viewW) * 100;
     boxHeightPercent = (newH / viewH) * 100;
     applyBoxCSS();
@@ -488,16 +678,13 @@ function applyBoxCSS() {
     boxPreview.style.width = boxWidthPercent + '%';
     boxPreview.style.height = boxHeightPercent + '%';
 }
-
 async function startScan() {
   const cameraId = cameraSelect.value;
   if (!cameraId) return;
-
   const selectedOption = cameraSelect.options[cameraSelect.selectedIndex];
   const cameraLabel = selectedOption ? selectedOption.textContent.toLowerCase() : '';
   let isFrontCamera = cameraLabel.includes('front') || cameraLabel.includes('user') || cameraLabel.includes('selfie');
   viewfinder.classList.toggle('mirror', isFrontCamera);
-
   scanner = new Html5Qrcode('reader', {
     formatsToSupport: FORMATS,
     experimentalFeatures: { useBarCodeDetectorIfSupported: true }
@@ -524,7 +711,6 @@ async function startScan() {
       },
       () => {}
     );
-
     try {
       const videoEl = document.querySelector('#reader video');
       const track = videoEl && videoEl.srcObject ? videoEl.srcObject.getVideoTracks()[0] : null;
@@ -534,7 +720,6 @@ async function startScan() {
         viewfinder.classList.toggle('mirror', realIsFront);
       }
     } catch (e) {}
-
     running = true; isPaused = false;
     viewfinder.classList.add('active');
     placeholder.style.display = 'none';
@@ -550,7 +735,6 @@ async function startScan() {
     scanner = null;
   }
 }
-
 async function stopScan() {
   if (scanner && running) { try { if(isPaused) scanner.resume(); await scanner.stop(); scanner.clear(); } catch(e){} }
   scanner=null; running=false; isPaused=false;
@@ -582,7 +766,6 @@ btnNextScan.addEventListener('click', () => {
   btnOcr.disabled = false;
   if (scanner && running) { try { scanner.resume(); } catch(e){} setStatus('Scanare activa','Se asteapta o noua eticheta...','ok'); }
 });
-
 /* =====================================================================
    [D] OCR — LA CERERE
    ===================================================================== */
@@ -619,7 +802,6 @@ function otsuThreshold(hist, total) {
   }
   return threshold;
 }
-
 function preprocessForOcr(srcCanvas) {
   const ctx = srcCanvas.getContext('2d');
   const img = ctx.getImageData(0, 0, srcCanvas.width, srcCanvas.height);
@@ -640,7 +822,6 @@ function preprocessForOcr(srcCanvas) {
   ctx.putImageData(img, 0, 0);
   return srcCanvas;
 }
-
 const CONFUSABLE_PAIRS = { '0':'O','O':'0','1':'I','I':'1','5':'S','S':'5','8':'B','B':'8','2':'Z','Z':'2','6':'G','G':'6' };
 function correctConfusables(code) {
   if (!code) return code;
@@ -654,7 +835,6 @@ function correctConfusables(code) {
   }
   return code;
 }
-
 function extractValidProductCode(rawText) {
   const cleanText = (rawText || '').toUpperCase();
   const regexPatterns = [ /[A-Z]{2,6}[-–]?[0-9]{2,10}[A-Z0-9]*/g, /[A-Z0-9]{1,6}[-–][A-Z0-9]{2,14}/g ];
@@ -676,7 +856,6 @@ function extractValidProductCode(rawText) {
   if (bestScore < 2) return null;
   return correctConfusables(best);
 }
-
 async function runOcr() {
   const video = document.querySelector('#reader video');
   if (!video || !video.videoWidth) {
@@ -698,13 +877,11 @@ async function runOcr() {
   cx.imageSmoothingEnabled = true;
   cx.drawImage(video, sx, sy, cropW, cropH, 0, 0, canvas.width, canvas.height);
   preprocessForOcr(canvas);
-
   if (!isPaused && scanner && running) {
     try { scanner.pause(true); } catch(e){}
     isPaused = true;
     viewfinder.classList.add('is-paused');
   }
-
   btnOcr.disabled = true;
   const originalBtnText = btnOcr.textContent;
   try {
@@ -720,13 +897,10 @@ async function runOcr() {
         tessedit_char_whitelist: 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789-,./ ' 
       });
     }
-
     setStatus('OCR', 'Se analizeaza eticheta...', 'warn');
     btnOcr.textContent = 'Se proceseaza...';
-
     const { data } = await ocrWorker.recognize(canvas);
     const finalCode = extractValidProductCode(data.text);
-
     if (finalCode) {
         showResult(finalCode, 'TEXT (OCR)');
     } else {
@@ -748,7 +922,6 @@ async function runOcr() {
     if (!isPaused) btnOcr.disabled = false;
   }
 }
-
 /* =====================================================================
    [E] AFISARE
    ===================================================================== */
@@ -757,18 +930,15 @@ function showResult(text, sursa) {
   const a = analyzeCode(text, sursa);
   resultFormat.textContent = 'Detectat: ' + sursa;
   rawCodeInput.value = a.productCode;
-
   // Actualizare UI pentru link de cautare fisa tehnica
   websiteLink.textContent = a.website.direct ? ('Deschide: ' + a.website.name + ' ↗') : a.website.name;
   websiteLink.href = a.website.url;
   websiteLink.className = 'website-link-box' + (a.website.direct ? '' : ' search');
   websiteLink.style.display = 'block';
-
   // Actualizare Producator si Domeniu
   infoProducator.textContent = a.brandName || 'Neidentificat';
   if (a.brandDomeniu) { infoDomeniuRow.style.display = 'block'; infoDomeniu.textContent = a.brandDomeniu; }
   else { infoDomeniuRow.style.display = 'none'; }
-
   // Actualizare Detalii extrase din coduri speciale EAN/QR
   let lot='—', dataFab=null; const rest=[];
   a.fields.forEach(f=>{
@@ -782,7 +952,6 @@ function showResult(text, sursa) {
   if (dataFab) det.push('Fabricatie: '+dataFab);
   rest.forEach(r=>det.push(r));
   infoDetalii.textContent = det.length ? det.join('  ·  ') : 'Nicio informatie in cod.';
-
   // Afisare Utilizare Piesa (creierul intern din regex)
   if (a.infoUtilizare) {
       utilizareBlurb.classList.add('visible');
@@ -790,12 +959,10 @@ function showResult(text, sursa) {
   } else {
       utilizareBlurb.classList.remove('visible');
   }
-
   resultSection.classList.add('visible');
   if (!/Nu am gasit|am afisat textul/.test(statusDetail.textContent)) setStatus('In pauza','Rezultat afisat. Apasa „URMATOAREA SCANARE".','warn');
   resultSection.scrollIntoView({ behavior:'smooth', block:'start' });
 }
-
 // Cand editezi codul brut (in caz de eroare OCR) si apesi Aplica, se recalculeaza automat totul
 btnRecalc.addEventListener('click', () => {
   const corrected = rawCodeInput.value.trim();
@@ -803,7 +970,6 @@ btnRecalc.addEventListener('click', () => {
   showResult(corrected, lastFormatName);
 });
 rawCodeInput.addEventListener('keydown', (e) => { if (e.key === 'Enter') btnRecalc.click(); });
-
 function beep() {
   try {
     const ctx = new (window.AudioContext||window.webkitAudioContext)();
