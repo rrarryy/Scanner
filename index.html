@@ -465,6 +465,23 @@ const FORMATS = [
    [B] BAZA DE DATE INTERNA PENTRU PIESE INDUSTRIALE
    ===================================================================== */
 const BRANDS = [
+  { re: /ALLEN[- ]?BRADLEY|ROCKWELL/i, name: 'Allen-Bradley', domeniu: 'PLC-uri, HMI, actionari si echipamente de control automatizat' },
+  { re: /MITSUBISHI/i, name: 'Mitsubishi Electric', domeniu: 'PLC-uri seria MELSEC, invertoare, roboti industriali' },
+  { re: /YASKAWA/i, name: 'Yaskawa', domeniu: 'Invertoare de frecventa, servo-actionari si robotica' },
+  { re: /\bIFM\b/i, name: 'ifm electronic', domeniu: 'Senzori industriali, IO-Link si sisteme de viziune' },
+  { re: /\bPILZ\b/i, name: 'Pilz', domeniu: 'Relee de siguranta, PLC-uri de siguranta (PNOZ)' },
+  { re: /\bSMC\b/i, name: 'SMC', domeniu: 'Pneumatica industriala: cilindri, valve, actuatoare' },
+  { re: /BECKHOFF/i, name: 'Beckhoff', domeniu: 'PC-based control, module I/O EtherCAT, servo' },
+  { re: /REXROTH|BOSCH/i, name: 'Bosch Rexroth', domeniu: 'Hidraulica, pneumatica, ghidaje liniare si actionari' },
+  { re: /DANFOSS/i, name: 'Danfoss', domeniu: 'Convertizoare de frecventa, senzori si control climatic' },
+  { re: /\bNI\b|NATIONAL INSTRUMENTS/i, name: 'National Instruments', domeniu: 'Sisteme de achizitie de date (DAQ), instrumentatie, LabVIEW' },
+  { re: /KEYENCE/i, name: 'Keyence', domeniu: 'Sisteme de viziune, cititoare coduri de bare, senzori de precizie' },
+  { re: /\bTURCK\b/i, name: 'Turck', domeniu: 'Senzori industriali, conectica si tehnologie RFID' },
+  { re: /WIKA/i, name: 'WIKA', domeniu: 'Instrumentatie pentru masurarea presiunii si temperaturii' },
+  { re: /PEPPERL/i, name: 'Pepperl+Fuchs', domeniu: 'Senzori industriali si protectie intrinseca (Ex)' },
+  { re: /KUKA/i, name: 'KUKA', domeniu: 'Roboti industriali si sisteme de productie automatizata' },
+  { re: /FANUC/i, name: 'FANUC', domeniu: 'Roboti industriali, sisteme CNC si roboti colaborativi' },
+  { re: /B&R|BERNECKER/i, name: 'B&R Automation', domeniu: 'PLC-uri, PC-uri industriale si tehnologie de miscare' },
   { re: /PANASONIC|MATSUSHITA/i, name: 'Panasonic', url: 'https://industrial.panasonic.com', domeniu: 'PLC-uri, componente electronice si senzori' },
   { re: /EATON|MOELLER/i, name: 'Eaton', url: 'https://www.eaton.com', domeniu: 'Intrerupatoare, contactoare, protectii motoare' },
   { re: /SIEMENS/i, name: 'Siemens', url: 'https://www.siemens.com', domeniu: 'Automatizari industriale, PLC-uri, echipamente electrice' },
@@ -478,38 +495,64 @@ const BRANDS = [
   { re: /RITTAL/i, name: 'Rittal', url: 'https://www.rittal.com', domeniu: 'Dulapuri electrice (Tablouri)' },
   { re: /FINDER/i, name: 'Finder', url: 'https://www.findernet.com', domeniu: 'Relee electromagnetice si temporizatoare' },
   { re: /LOVATO/i, name: 'Lovato Electric', url: 'https://www.lovatoelectric.com', domeniu: 'Aparataj electric de joasa tensiune' },
-  { re: /MEAN\s*WELL/i, name: 'Mean Well', url: 'https://www.meanwell.com', domeniu: 'Surse de alimentare in comutatie (SMPS)' }
+  { re: /MEAN\s*WELL/i, name: 'Mean Well', url: 'https://www.meanwell.com', domeniu: 'Surse de alimentare in comutatie (SMPS)' },
+  { re: /\bWAGO\b/i, name: 'WAGO', url: 'https://www.wago.com', domeniu: 'Conectica industriala si borne de conexiune' }
 ];
 const PART_HINTS = [
+  // --- ROCKWELL / ALLEN-BRADLEY ---
+  { re: /^(1756|1769|1732|20G|2711P)/, name: 'Allen-Bradley', utilizare: 'PLC-uri seria ControlLogix/CompactLogix sau convertizoare de frecventa PowerFlex. Echipamente de control utilizate pe scara larga in industria grea pentru a rula logica de automatizare.' },
+  
+  // --- BECKHOFF ---
+  { re: /^(CX[12589]|EK11|EL[12348]|KL[1234])/, name: 'Beckhoff', utilizare: 'Controlere IPC industriale seria CX sau module I/O EtherCAT. Ideale pentru aplicatii unde e necesara viteza de procesare ridicata in timp real si o comunicare prin bus ultra-rapida.' },
+  
+  // --- MITSUBISHI ---
+  { re: /^(FX3|FX5|Q[0-9]|FR-)/, name: 'Mitsubishi Electric', utilizare: 'PLC-uri seria FX sau invertoare de frecventa seria FR. Extrem de robuste, se gasesc des pe utilaje de ambalare, CNC-uri si benzi transportoare asiatice.' },
+  // --- KUKA & FANUC ---
+  { re: /^(KR[- ]?[1-9]|KRC)/, name: 'KUKA', utilizare: 'Brat robotic industrial sau cabinet de control (KRC). Utilizat pe liniile de asamblare auto, sudura in puncte si paletizare grea.' },
+  
+  // --- B&R AUTOMATION ---
+  { re: /^(X20|APC|PPC)/, name: 'B&R Automation', utilizare: 'Module de I/O din familia X20 sau panel-PC-uri industriale. Sistem modular excelent pentru utilaje de plastic, imprimare si ambalare.' },
+  // --- SMC & PNEUMATICA ---
+  { re: /^(SY[3579]|CQ2|CDQ2|KQ2|AW[234])/, name: 'SMC', utilizare: 'Componenta pneumatica (cilindru, valva electromagnetica, regulator de presiune aer). Regleaza fluxul de aer comprimat si transforma forta aerului in miscare mecanica liniara.' },
+  // --- IFM & TURCK (SENZORI) ---
+  { re: /^(IG[A-Z]|O5D|PN[0-9]|SI[0-9])/, name: 'ifm electronic', utilizare: 'Senzor industrial (inductiv pentru detectie metal, presiune, sau debit). Se monteaza direct pe tevi sau utilaje pentru a transmite feedback in timp real catre un PLC prin protocol IO-Link.' },
+  { re: /^(BI[1-9]|NI[1-9]|FCS|TBEN)/, name: 'Turck', utilizare: 'Senzor inductiv sau modul descentralizat (fieldbus) de I/O. Citeste si trimite semnale logice de pe teren direct catre panoul de comanda.' },
+  
+  // --- DANFOSS ---
+  { re: /^(FC[- ]?(51|101|280|302)|VLT)/, name: 'Danfoss', utilizare: 'Convertizor de frecventa seria VLT. Modifica viteza si turatia unui motor electric prin variatia frecventei tensiunii. Folosit pe benzi, pompe si ventilatoare.' },
+  // --- PILZ ---
+  { re: /^PNOZ/, name: 'Pilz', utilizare: 'Releu de siguranta PNOZ. Cel mai important echipament pentru siguranta angajatilor: decupleaza instant masinaria la apasarea ciupercii de avarie sau deschiderea usii de acces.' },
+  // --- NATIONAL INSTRUMENTS (NI) ---
+  { re: /^(cRIO|NI[- ]?92|USB[- ]?60|PXIe)/, name: 'National Instruments', utilizare: 'Modul de achizitie date (DAQ) sau controller CompactRIO. Hardware integrat deseori cu mediul de programare LabVIEW pentru teste complexe, masuratori de inalta frecventa si prototipare industriala.' },
   // --- SIEMENS ---
-  { re: /^(6ES7|S7-1200|S7-1500)/, name: 'Siemens', utilizare: 'Modul PLC (Control Logic Programabil) seria SIMATIC S7. Creierul masinariilor automatizate, folosit pentru a rula logica de control (TIA Portal).' },
+  { re: /^(6ES7|S7-1200|S7-1500)/, name: 'Siemens', utilizare: 'Modul PLC (Control Logic Programabil) seria SIMATIC S7. Creierul masinariilor automatizate, folosit pentru a rula logica de control prin programare in TIA Portal.' },
   { re: /^3RT/, name: 'Siemens', utilizare: 'Contactor electromagnetic seria SIRIUS. Actioneaza ca un intrerupator de mare putere comandat electric. Foarte des intalnit in pornirea directa a motoarelor trifazate.' },
   { re: /^3RV/, name: 'Siemens', utilizare: 'Disjunctor de protectie a motorului (Motor Starter Protector). Decupleaza automat alimentarea daca motorul consuma prea mult curent (suprasarcina) sau face scurtcircuit.' },
-  { re: /^(3SU|3SB)/, name: 'Siemens', utilizare: 'Element de comanda si semnalizare (ex: buton de start/stop, lampa indicatoare, selector) montat de obicei pe usa tabloului electric.' },
-  { re: /^6EP/, name: 'Siemens', utilizare: 'Sursa de alimentare SITOP. Converteste tensiunea din retea (ex: 230V AC) in tensiune continua necesara componentelor de comanda (ex: 24V DC).' },
+  { re: /^(3SU|3SB)/, name: 'Siemens', utilizare: 'Element de comanda si semnalizare (ex: buton de start/stop, lampa indicatoare, selector) montat de obicei pe usa tabloului electric de automatizare.' },
+  { re: /^6EP/, name: 'Siemens', utilizare: 'Sursa de alimentare SITOP. Converteste tensiunea din retea (ex: 230V AC) in tensiune continua necesara componentelor de comanda si senzorilor (ex: 24V DC).' },
   
   // --- SCHNEIDER ELECTRIC ---
-  { re: /^(LC1D|LC1F|LC2)/, name: 'Schneider Electric', utilizare: 'Contactor electromagnetic seria TeSys. Dispozitivul de baza pentru inchiderea si deschiderea circuitelor de forta (pornire motoare, rezistente de incalzire).' },
+  { re: /^(LC1D|LC1F|LC2)/, name: 'Schneider Electric', utilizare: 'Contactor electromagnetic seria TeSys. Dispozitivul de baza pentru inchiderea si deschiderea circuitelor de forta (pornire motoare, rezistente masive de incalzire).' },
   { re: /^(GV2|GV3)/, name: 'Schneider Electric', utilizare: 'Disjunctor magneto-termic seria TeSys GV. Protejeaza fizic cablurile si motorul impotriva distrugerii cauzate de scurtcircuit si suprasarcina termica.' },
-  { re: /^LRD/, name: 'Schneider Electric', utilizare: 'Releu termic de suprasarcina. Se ataseaza sub un contactor (ex: LC1D) si opreste circuitul de comanda daca motorul se supraincalzeste in timp.' },
-  { re: /^(A9F|A9N|iC60)/, name: 'Schneider Electric', utilizare: 'Intrerupator automat miniatural (MCB - Siguranta automata). Protejeaza circuitele electrice de iluminat si prize impotriva scurtcircuitelor.' },
-  { re: /^RXM/, name: 'Schneider Electric', utilizare: 'Releu miniatura plug-in seria Zelio. Folosit pentru multiplicarea contactelor, izolarea galvanica a semnalelor catre PLC si comanda sarcinilor mici.' },
-  { re: /^(XB4|XB5)/, name: 'Schneider Electric', utilizare: 'Aparataj de comanda pe panou (butoane cu retinere/revenire, ciuperca de avarie, lampi LED) seria Harmony.' },
+  { re: /^LRD/, name: 'Schneider Electric', utilizare: 'Releu termic de suprasarcina. Se ataseaza sub un contactor (ex: LC1D) si opreste circuitul de comanda daca motorul se supraincalzeste pe parcursul rularii.' },
+  { re: /^(A9F|A9N|iC60)/, name: 'Schneider Electric', utilizare: 'Intrerupator automat miniatural (MCB - Siguranta automata). Protejeaza circuitele electrice de iluminat, prize si transformatoare mici impotriva scurtcircuitelor in tablou.' },
+  { re: /^RXM/, name: 'Schneider Electric', utilizare: 'Releu miniatura plug-in seria Zelio. Folosit pentru multiplicarea contactelor, izolarea galvanica a semnalelor catre PLC si comanda sarcinilor mici si medii.' },
+  { re: /^(XB4|XB5)/, name: 'Schneider Electric', utilizare: 'Aparataj de comanda pe panou (butoane cu retinere/revenire, ciuperca de avarie, lampi LED) seria industriala Harmony.' },
   // --- EATON ---
-  { re: /^PKZM/, name: 'Eaton', utilizare: 'Disjunctor pentru protectia motorului. Dispozitiv robust ce contine o protectie termica (ajustabila) si una magnetica (scurtcircuit).' },
-  { re: /^(DILM|DILA)/, name: 'Eaton', utilizare: 'Contactor seria DIL. Un standard in industrie pentru separarea galvanica si actionarea in forta a echipamentelor industriale.' },
+  { re: /^PKZM/, name: 'Eaton', utilizare: 'Disjunctor pentru protectia motorului. Dispozitiv robust ce contine o protectie termica (ajustabila) si una magnetica (scurtcircuit), salvand motorul de la ardere.' },
+  { re: /^(DILM|DILA)/, name: 'Eaton', utilizare: 'Contactor seria DIL. Un standard in industrie pentru separarea galvanica si actionarea in forta a echipamentelor industriale grele.' },
   { re: /^FAZ/, name: 'Eaton', utilizare: 'Siguranta automata miniaturala (MCB). Protectie standard pentru circuite terminale si ramificatii de forta in tablouri de distributie.' },
   
   // --- OMRON ---
-  { re: /^(CJ1|CJ2|CP1)/, name: 'Omron', utilizare: 'Modul PLC (Controler Logic Programabil). Unitate de procesare compacta folosita in automatizari flexibile de utilaje.' },
-  { re: /^(MY2|MY4|G2R)/, name: 'Omron', utilizare: 'Releu de uz general. Extrem de intalnit in dulapurile de automatizare pentru izolarea circuitelor de intrare/iesire de forta fata de componentele delicate (PLC).' },
-  { re: /^E3Z/, name: 'Omron', utilizare: 'Senzor fotoelectric standard. Echipament folosit pe benzile transportoare pentru a detecta de la distanta prezenta sau absenta unui produs, functionand pe baza unui fascicul de lumina.' },
+  { re: /^(CJ1|CJ2|CP1)/, name: 'Omron', utilizare: 'Modul PLC (Controler Logic Programabil). Unitate de procesare compacta folosita in automatizari flexibile de utilaje de dimensiuni medii.' },
+  { re: /^(MY2|MY4|G2R)/, name: 'Omron', utilizare: 'Releu de uz general. Extrem de intalnit in dulapurile de automatizare pentru izolarea circuitelor de intrare/iesire de forta fata de componentele delicate ale PLC-ului.' },
+  { re: /^E3Z/, name: 'Omron', utilizare: 'Senzor fotoelectric standard. Echipament folosit pe benzile transportoare pentru a detecta de la distanta prezenta sau absenta unui produs in flux.' },
   // --- PANASONIC ---
-  { re: /^AFPX/, name: 'Panasonic', utilizare: 'Controler logic programabil (PLC) seria FP-X. Ideal pentru aplicatii de control cu un numar mic si mediu de intrari/iesiri digitale.' },
+  { re: /^AFPX/, name: 'Panasonic', utilizare: 'Controler logic programabil (PLC) seria FP-X. Ideal pentru aplicatii de control cu un numar mic si mediu de intrari/iesiri digitale in aplicatii de robotica usoara.' },
   // --- MEAN WELL ---
-  { re: /^(NDR|MDR|HDR|SDR|LRS)/, name: 'Mean Well', utilizare: 'Sursa de alimentare in comutatie (Switching Power Supply). Transforma curentul alternativ din retea in curent continuu stabilizat, necesar sistemelor de control.' },
+  { re: /^(NDR|MDR|HDR|SDR|LRS)/, name: 'Mean Well', utilizare: 'Sursa de alimentare in comutatie (Switching Power Supply) pentru sina DIN. Transforma curentul alternativ din retea in curent continuu stabilizat, necesar sistemelor de control.' },
   // --- GENERIC FALLBACK ---
-  { re: /^[A-Z0-9]+/, name: null, utilizare: 'Nu exista date clare despre aceasta piesa in memoria offline. Deschideti fisa tehnica apasand butonul albastru de sus pentru a afla domeniul de utilizare.' }
+  { re: /^[A-Z0-9]+/, name: null, utilizare: 'Nu exista detalii locale setate in program pentru functionalitatea piesei. Apasa butonul "Cauta Datasheet ↗" de mai sus pentru a citi direct fisa tehnica din fabrica.' }
 ];
 const MH10_DI = { '1P':'Cod produs (producator)','2P':'Revizie produs','P':'Cod produs (client)','Q':'Cantitate','1T':'Lot fabricatie','T':'Lot fabricatie','S':'Numar de serie','1S':'Numar de serie','B':'Numar UPC/EAN incorporat','4L':'Tara de origine','16D':'Data fabricatiei','9D':'Data','6D':'Data','D':'Data','1V':'Producator (ID)','V':'Producator (ID)','K':'Comanda / ordin' };
 const MH10_KEYS = Object.keys(MH10_DI).sort((a,b)=>b.length-a.length);
