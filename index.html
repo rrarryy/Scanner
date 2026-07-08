@@ -166,10 +166,11 @@
     z-index: 6; box-shadow: 0 0 0 2000px rgba(9,12,15,.46);
     pointer-events: none; display: none;
   }
-  .resize-handle {
+    .resize-handle {
     position: absolute; width: 44px; height: 44px;
     background: transparent; border: none; box-shadow: none; z-index: 7;
-    pointer-events: auto;
+    pointer-events: auto; 
+    touch-action: none; /* BLOCHEAZĂ SCROLL-UL ACCIDENTAL */
   }
   .rh-tl { top: -22px; left: -22px; cursor: nwse-resize; }
   .rh-tr { top: -22px; right: -22px; cursor: nesw-resize; }
@@ -920,26 +921,39 @@ async function runOcr() {
   } finally {
     btnOcr.textContent = originalBtnText;
     if (!isPaused) btnOcr.disabled = false;
+    
+    // CURĂȚARE MEMORIE RAM DUPĂ FIECARE SCANARE OCR
+    if (typeof canvas !== 'undefined') {
+        canvas.width = 0;
+        canvas.height = 0;
+    }
   }
-}
 /* =====================================================================
-   [E] AFISARE
+   [E] AFISARE & INTEGRARE BAZĂ DE DATE
    ===================================================================== */
-function showResult(text, sursa) {
+async function showResult(text, sursa) {
   lastFormatName = sursa;
   const a = analyzeCode(text, sursa);
   resultFormat.textContent = 'Detectat: ' + sursa;
   rawCodeInput.value = a.productCode;
-  // Actualizare UI pentru link de cautare fisa tehnica
+
   websiteLink.textContent = a.website.direct ? ('Deschide: ' + a.website.name + ' ↗') : a.website.name;
   websiteLink.href = a.website.url;
   websiteLink.className = 'website-link-box' + (a.website.direct ? '' : ' search');
   websiteLink.style.display = 'block';
-  // Actualizare Producator si Domeniu
+
+  // --- ZONA DE PREGĂTIRE PENTRU BAZA DE DATE ---
+  setStatus('Se proceseaza', 'Se interogheaza baza de date a firmei...', 'warn');
+  
+  /* Aici vom scrie codul (fetch) care trimite a.productCode către serverul tău.
+    Exemplu viitor: const produsDb = await cautaInSistem(a.productCode); 
+  */
+  // ---------------------------------------------
+
   infoProducator.textContent = a.brandName || 'Neidentificat';
   if (a.brandDomeniu) { infoDomeniuRow.style.display = 'block'; infoDomeniu.textContent = a.brandDomeniu; }
   else { infoDomeniuRow.style.display = 'none'; }
-  // Actualizare Detalii extrase din coduri speciale EAN/QR
+
   let lot='—', dataFab=null; const rest=[];
   a.fields.forEach(f=>{
     if (/lot|serie/i.test(f.k) && lot==='—') { lot=f.v; return; }
@@ -952,15 +966,16 @@ function showResult(text, sursa) {
   if (dataFab) det.push('Fabricatie: '+dataFab);
   rest.forEach(r=>det.push(r));
   infoDetalii.textContent = det.length ? det.join('  ·  ') : 'Nicio informatie in cod.';
-  // Afisare Utilizare Piesa (creierul intern din regex)
+
   if (a.infoUtilizare) {
       utilizareBlurb.classList.add('visible');
       utilizareText.textContent = a.infoUtilizare;
   } else {
       utilizareBlurb.classList.remove('visible');
   }
+
   resultSection.classList.add('visible');
-  if (!/Nu am gasit|am afisat textul/.test(statusDetail.textContent)) setStatus('In pauza','Rezultat afisat. Apasa „URMATOAREA SCANARE".','warn');
+  if (!/Nu am gasit|am afisat textul/.test(statusDetail.textContent)) setStatus('In pauza','Rezultat afisat. Apasa „URMATOAREA SCANARE".','ok');
   resultSection.scrollIntoView({ behavior:'smooth', block:'start' });
 }
 // Cand editezi codul brut (in caz de eroare OCR) si apesi Aplica, se recalculeaza automat totul
