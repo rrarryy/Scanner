@@ -482,12 +482,15 @@ function actualizeazaInterfataLot() {
 
 function adaugaPiesaCurentaInLot() {
     const codCurent = rawCodeInput.value.trim();
+    const prodCurent = infoProducator.textContent;
+    const denumireCurenta = infoDenumire.textContent;
+
     if (codCurent) {
         lotCurentPiese.push({
-            cod_piesa: codCurent,
-            cantitate: 1,
-            actiune: currentOperation,
-            data_scanare: new Date().toISOString()
+            cod_produs: codCurent,
+            producator: prodCurent,
+            denumire: denumireCurenta,
+            actiune: currentOperation
         });
         actualizeazaInterfataLot();
     }
@@ -544,9 +547,10 @@ btnSendBatch.addEventListener('click', async () => {
           // Construim Payload-ul exact asa cum il asteapta nodul tau "Code in JavaScript"
           const payload = {
               table: TABLE_SCAN,
-              cod_produs: piesa.cod_piesa, // Asigura-te ca in INV_scan_stoc coloana se numeste 'cod_produs'
-              actiune: piesa.actiune,
-              cantitate: piesa.cantitate
+              cod_produs: piesa.cod_produs,
+              producator: piesa.producator,
+              denumire: piesa.denumire,
+              actiune: piesa.actiune
           };
 
           const response = await fetch(`${N8N_URL_INSERT}?table=${TABLE_SCAN}`, {
