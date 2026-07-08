@@ -11,11 +11,6 @@
 <style>
   /* ==========================================================
      SISTEM DE DESIGN — "INSTRUMENT DE PRECIZIE"
-     Fundal cald, tip hârtie de fișă tehnică. Vizorul e tratat ca
-     o carcasă de instrument optic (telemetru), cu colțuri de
-     reticul. Rezultatul e tratat ca o fișă tehnică de componentă,
-     cu un "afișaj" tip LCD pentru codul citit. Doi accenți cu rol
-     diferit: chihlimbar (stare/acțiune) și albastru (achiziție/scan).
      ========================================================== */
   :root {
     --paper:      #f5f3ec;
@@ -52,7 +47,6 @@
   }
   ::selection { background: rgba(31,111,181,.18); }
 
-  /* ---------- Placă nominală (topbar) ---------- */
   .topbar {
     background: var(--graphite);
     padding: 14px 20px;
@@ -78,7 +72,6 @@
 
   main { max-width: 640px; margin: 0 auto; padding: 24px 16px 48px; }
 
-  /* ---------- Carduri ---------- */
   .card {
     background: var(--surface); border: 1px solid var(--border);
     border-radius: var(--radius-lg); box-shadow: var(--shadow-card);
@@ -96,12 +89,10 @@
   .card-head h2 svg { width: 14px; height: 14px; opacity: .55; flex-shrink: 0; }
   .card-body { padding: 18px; }
 
-  /* Placa senzorului: tratată ca o carcasă de instrument (fundal grafit) */
   .sensor-head { background: var(--graphite-2); border-bottom: 1px solid var(--border-dark); }
   .sensor-head h2 { color: #cfd6dc; }
   .sensor-head h2 svg { opacity: .7; stroke: #cfd6dc; }
 
-  /* ---------- Pastile de status ---------- */
   .pill {
     font-size: 11.5px; font-weight: 600; padding: 4px 10px; border-radius: 999px;
     display: inline-flex; align-items: center; gap: 6px;
@@ -115,18 +106,15 @@
   .pill.warn { background: var(--warn-bg); color: var(--warn); border-color: transparent; }
   .pill.ok::before { animation: pulse-dot 1.8s ease-in-out infinite; }
   @keyframes pulse-dot { 0%,100%{opacity:1;} 50%{opacity:.35;} }
-  @media (prefers-reduced-motion: reduce) { .pill.ok::before { animation: none; } }
+  @media (prefers-reduced-motion: reduce) { .pill.ok::before { animation: none; opacity: 1; } }
 
-  /* ---------- Vizor: carcasă de instrument optic ---------- */
   .viewfinder {
     position: relative;
-    background:
-      radial-gradient(120% 140% at 50% 0%, #232b33, #0c1014 78%);
+    background: radial-gradient(120% 140% at 50% 0%, #232b33, #0c1014 78%);
     height: 260px; display: flex; align-items: center; justify-content: center;
     overflow: hidden;
   }
   .viewfinder::before {
-    /* rama interioara, ca un bezel adancit */
     content: ""; position: absolute; inset: 6px; border-radius: 8px;
     box-shadow: inset 0 0 0 1px rgba(255,255,255,.05), inset 0 2px 10px rgba(0,0,0,.4);
     pointer-events: none; z-index: 4;
@@ -159,7 +147,6 @@
   @keyframes sweep { 0%,100% { top: 8%; } 50% { top: 92%; } }
   @media (prefers-reduced-motion: reduce) { .scanline { animation: none; top: 50%; } }
 
-  /* ---------- Zona de scanare: reticul cu colțuri, redimensionabil ---------- */
   .box-preview {
     position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);
     border: 1.5px solid rgba(77,157,224,.65); border-radius: 4px;
@@ -169,13 +156,12 @@
   .resize-handle {
     position: absolute; width: 44px; height: 44px;
     background: transparent; border: none; box-shadow: none; z-index: 7;
-    pointer-events: auto;
+    pointer-events: auto; touch-action: none;
   }
   .rh-tl { top: -22px; left: -22px; cursor: nwse-resize; }
   .rh-tr { top: -22px; right: -22px; cursor: nesw-resize; }
   .rh-bl { bottom: -22px; left: -22px; cursor: nesw-resize; }
   .rh-br { bottom: -22px; right: -22px; cursor: nwse-resize; }
-  /* colțurile de reticul devin VIZIBILE — semnalul clar că se poate trage de ele */
   .resize-handle::after {
     content: ""; position: absolute; top: 12px; left: 12px; width: 20px; height: 20px;
     border-color: var(--amber-glow); transition: transform .15s ease;
@@ -187,10 +173,9 @@
   .resize-handle:active::after { transform: scale(1.15); }
   .viewfinder.active .resize-handle::after { animation: bracket-glow 2.2s ease-in-out infinite; }
   @keyframes bracket-glow { 0%,100% { opacity: 1; } 50% { opacity: .55; } }
-  @media (prefers-reduced-motion: reduce) { .viewfinder.active .resize-handle::after { animation: none; } }
+  @media (prefers-reduced-motion: reduce) { .viewfinder.active .resize-handle::after { animation: none; opacity: 1; } }
   .drag-hint { font-size: 11.5px; color: var(--ink-soft); margin-top: 8px; text-align: center; }
 
-  /* ---------- Controale: butoane tip "tastă de instrument" ---------- */
   .controls { display: flex; gap: 10px; flex-wrap: wrap; }
   select, button {
     font-family: var(--font-sans); font-size: 13.5px; font-weight: 600;
@@ -227,7 +212,6 @@
   }
   .options-row span#statusDetail { font-family: var(--font-mono); font-size: 11.5px; color: var(--ink-soft); font-weight: 500 !important; }
 
-  /* ---------- Rezultat: fișă tehnică de componentă ---------- */
   #resultSection { display: none; }
   #resultSection.visible { display: block; }
 
@@ -242,7 +226,6 @@
   .website-link-box:hover { background: #eaf3fa; }
   .website-link-box.search { }
 
-  /* "Fișă tehnică" — tabel de specificații */
   .data-grid {
     display: grid; grid-template-columns: 1fr 1fr; gap: 0;
     background: var(--surface-2); border-radius: var(--radius-md);
@@ -266,7 +249,6 @@
   .dl-detalii::before { content: 'ℹ'; }
   .data-value { font-size: 14px; font-weight: 500; color: var(--ink); word-break: break-word; }
 
-  /* Cod piesă = "afișaj LCD" al instrumentului */
   .raw-edit-row {
     display: flex; gap: 8px; align-items: center; margin-bottom: 6px;
     background: #1b241f; padding: 4px; border-radius: var(--radius-sm);
@@ -284,19 +266,7 @@
   }
   #btnRecalc::before { content: '↻'; margin-right: 5px; }
   #btnRecalc:hover:not(:disabled) { background: #2e402f; }
-  .field-hint { font-size: 11px; color: var(--ink-soft); margin-bottom: 14px; }
 
-  .btn-next-scan {
-    width: 100%;
-    background: linear-gradient(180deg, #4a9a5f, var(--ok)); border-color: var(--ok);
-    color: white; padding: 14px; font-size: 14.5px; font-weight: 700; margin-top: 4px;
-    box-shadow: 0 1px 0 rgba(255,255,255,.2) inset, 0 3px 10px rgba(63,125,79,.3);
-    letter-spacing: .4px;
-  }
-  .btn-next-scan::before { content: '↷ '; }
-  .btn-next-scan:active { transform: translateY(1px); }
-
-  /* Notă tehnică — "la ce se folosește" */
   .online-blurb {
     background: var(--warn-bg); border: 1px solid #ecd9a6; border-radius: var(--radius-md);
     padding: 12px 14px; font-size: 13px; color: var(--ink); margin-top: 4px; margin-bottom: 14px; display: none;
@@ -308,6 +278,44 @@
     margin-bottom: 5px; font-size: 10.5px; text-transform: uppercase; letter-spacing: .7px;
   }
   .online-blurb strong::before { content: '⚑'; }
+
+  /* =========================================================
+     NOI STILURI PENTRU BUTOANELE DE LOT (BATCH PROCESSING)
+     ========================================================= */
+  .batch-status-bar {
+    background: #eaf3fa; border: 1px dashed #bcd6ea; color: var(--blue);
+    padding: 8px 12px; border-radius: var(--radius-sm); font-size: 12.5px;
+    font-weight: 600; text-align: center; margin-bottom: 14px; display: none;
+  }
+  .action-group {
+    display: flex; flex-direction: column; gap: 10px; margin-top: 4px;
+  }
+  .action-row {
+    display: flex; gap: 10px;
+  }
+  .btn-action {
+    flex: 1; padding: 13px 10px; font-size: 13px; font-weight: 600;
+    border-radius: var(--radius-sm); border: 1px solid transparent;
+    cursor: pointer; text-align: center; transition: all 0.15s ease;
+    box-shadow: 0 1px 2px rgba(0,0,0,0.05);
+  }
+  .btn-action:active { transform: translateY(1px); box-shadow: none; }
+  
+  /* Sterge (Rosu) */
+  .btn-discard { background: var(--surface); color: var(--danger); border-color: #e3c3ba; }
+  .btn-discard:hover { background: var(--danger-bg); }
+  
+  /* Adauga si Continua (Albastru) */
+  .btn-add-continue { background: var(--surface-2); color: var(--blue); border-color: #bcd6ea; }
+  .btn-add-continue:hover { background: #eaf3fa; }
+  
+  /* Trimite Lotul (Verde Principal) */
+  .btn-send {
+    background: linear-gradient(180deg, #4a9a5f, var(--ok)); color: white;
+    border-color: var(--ok); box-shadow: 0 1px 0 rgba(255,255,255,.2) inset, 0 3px 10px rgba(63,125,79,.3);
+    font-size: 14.5px; font-weight: 700; letter-spacing: .4px;
+  }
+  .btn-send:hover { background: linear-gradient(180deg, #51a667, #376e45); }
 </style>
 </head>
 <body>
@@ -348,7 +356,7 @@
       </div>
       <div class="paused-overlay">
         <div>Analiza oprita.</div>
-        <div style="font-size: 12px; font-weight: 400; opacity: 0.75;">Datele au fost preluate — apasa „URMATOAREA SCANARE".</div>
+        <div style="font-size: 12px; font-weight: 400; opacity: 0.75;">Datele au fost preluate — alegeți o acțiune.</div>
       </div>
     </div>
     <div class="card-body">
@@ -373,6 +381,9 @@
       <span class="pill ok" id="resultFormat">Tip Cod</span>
     </div>
     <div class="card-body">
+      
+      <div class="batch-status-bar" id="batchStatusBar">Piese în lotul curent: 0</div>
+
       <a href="#" target="_blank" rel="noopener" class="website-link-box search" id="websiteLink" style="display:none;">Cauta Datasheet</a>
 
       <div class="data-grid">
@@ -380,7 +391,7 @@
           <span class="data-label">Cod Piesa Identificat</span>
           <div class="raw-edit-row">
             <input type="text" id="rawCodeInput" value="" spellcheck="false">
-            <button id="btnRecalc">Aplica</button>
+            <button id="btnRecalc">Editeaza</button>
           </div>
         </div>
 
@@ -408,14 +419,19 @@
         <strong>La ce este utilizata aceasta piesa</strong>
         <div id="utilizareText">Se analizeaza...</div>
       </div>
-      <button class="btn-next-scan" id="btnNextScan">URMATOAREA SCANARE</button>
+      
+      <div class="action-group">
+        <div class="action-row">
+          <button class="btn-action btn-discard" id="btnDeleteScan">✗ STERGE SCANAREA</button>
+          <button class="btn-action btn-add-continue" id="btnNextScan">＋ URMATOAREA SCANARE</button>
+        </div>
+        <button class="btn-action btn-send" id="btnSendBatch">✈ TRIMITE DIRECT (1)</button>
+      </div>
+
     </div>
   </div>
 </main>
 <script>
-/* =====================================================================
-   [A] ELEMENTE & STARE
-   ===================================================================== */
 const cameraSelect = document.getElementById('cameraSelect');
 const btnStart = document.getElementById('btnStart');
 const btnStop = document.getElementById('btnStop');
@@ -433,13 +449,19 @@ const infoLot = document.getElementById('infoLot');
 const infoDetalii = document.getElementById('infoDetalii');
 const infoDomeniuRow = document.getElementById('infoDomeniuRow');
 const infoDomeniu = document.getElementById('infoDomeniu');
-const btnNextScan = document.getElementById('btnNextScan');
 const boxPreview = document.getElementById('boxPreview');
 const dragHint = document.getElementById('dragHint');
 const rawCodeInput = document.getElementById('rawCodeInput');
 const btnRecalc = document.getElementById('btnRecalc');
 const utilizareBlurb = document.getElementById('utilizareBlurb');
 const utilizareText = document.getElementById('utilizareText');
+
+// Elementele noi pentru Batch Processing
+const btnNextScan = document.getElementById('btnNextScan');
+const btnDeleteScan = document.getElementById('btnDeleteScan');
+const btnSendBatch = document.getElementById('btnSendBatch');
+const batchStatusBar = document.getElementById('batchStatusBar');
+
 let scanner = null;
 let running = false;
 let isPaused = false;
@@ -447,12 +469,16 @@ let ocrWorker = null;
 let boxWidthPercent = 65;   
 let boxHeightPercent = 45;  
 let lastFormatName = 'Cod Standard';
-let lastOcrCandidate = null;
+
+// MEMORIA PENTRU LOTUL CURENT DE PIESE
+let lotCurentPiese = [];
+
 function setStatus(pillText, detailText, kind) {
   statusPill.textContent = pillText;
   statusPill.className = 'pill' + (kind ? ' ' + kind : '');
   statusDetail.textContent = detailText || '—';
 }
+
 const FORMATS = [
   Html5QrcodeSupportedFormats.QR_CODE, Html5QrcodeSupportedFormats.DATA_MATRIX,
   Html5QrcodeSupportedFormats.AZTEC, Html5QrcodeSupportedFormats.PDF_417,
@@ -461,27 +487,8 @@ const FORMATS = [
   Html5QrcodeSupportedFormats.CODE_128, Html5QrcodeSupportedFormats.CODE_39,
   Html5QrcodeSupportedFormats.ITF
 ];
-/* =====================================================================
-   [B] BAZA DE DATE INTERNA PENTRU PIESE INDUSTRIALE
-   ===================================================================== */
+
 const BRANDS = [
-  { re: /ALLEN[- ]?BRADLEY|ROCKWELL/i, name: 'Allen-Bradley', domeniu: 'PLC-uri, HMI, actionari si echipamente de control automatizat' },
-  { re: /MITSUBISHI/i, name: 'Mitsubishi Electric', domeniu: 'PLC-uri seria MELSEC, invertoare, roboti industriali' },
-  { re: /YASKAWA/i, name: 'Yaskawa', domeniu: 'Invertoare de frecventa, servo-actionari si robotica' },
-  { re: /\bIFM\b/i, name: 'ifm electronic', domeniu: 'Senzori industriali, IO-Link si sisteme de viziune' },
-  { re: /\bPILZ\b/i, name: 'Pilz', domeniu: 'Relee de siguranta, PLC-uri de siguranta (PNOZ)' },
-  { re: /\bSMC\b/i, name: 'SMC', domeniu: 'Pneumatica industriala: cilindri, valve, actuatoare' },
-  { re: /BECKHOFF/i, name: 'Beckhoff', domeniu: 'PC-based control, module I/O EtherCAT, servo' },
-  { re: /REXROTH|BOSCH/i, name: 'Bosch Rexroth', domeniu: 'Hidraulica, pneumatica, ghidaje liniare si actionari' },
-  { re: /DANFOSS/i, name: 'Danfoss', domeniu: 'Convertizoare de frecventa, senzori si control climatic' },
-  { re: /\bNI\b|NATIONAL INSTRUMENTS/i, name: 'National Instruments', domeniu: 'Sisteme de achizitie de date (DAQ), instrumentatie, LabVIEW' },
-  { re: /KEYENCE/i, name: 'Keyence', domeniu: 'Sisteme de viziune, cititoare coduri de bare, senzori de precizie' },
-  { re: /\bTURCK\b/i, name: 'Turck', domeniu: 'Senzori industriali, conectica si tehnologie RFID' },
-  { re: /WIKA/i, name: 'WIKA', domeniu: 'Instrumentatie pentru masurarea presiunii si temperaturii' },
-  { re: /PEPPERL/i, name: 'Pepperl+Fuchs', domeniu: 'Senzori industriali si protectie intrinseca (Ex)' },
-  { re: /KUKA/i, name: 'KUKA', domeniu: 'Roboti industriali si sisteme de productie automatizata' },
-  { re: /FANUC/i, name: 'FANUC', domeniu: 'Roboti industriali, sisteme CNC si roboti colaborativi' },
-  { re: /B&R|BERNECKER/i, name: 'B&R Automation', domeniu: 'PLC-uri, PC-uri industriale si tehnologie de miscare' },
   { re: /PANASONIC|MATSUSHITA/i, name: 'Panasonic', url: 'https://industrial.panasonic.com', domeniu: 'PLC-uri, componente electronice si senzori' },
   { re: /EATON|MOELLER/i, name: 'Eaton', url: 'https://www.eaton.com', domeniu: 'Intrerupatoare, contactoare, protectii motoare' },
   { re: /SIEMENS/i, name: 'Siemens', url: 'https://www.siemens.com', domeniu: 'Automatizari industriale, PLC-uri, echipamente electrice' },
@@ -495,79 +502,36 @@ const BRANDS = [
   { re: /RITTAL/i, name: 'Rittal', url: 'https://www.rittal.com', domeniu: 'Dulapuri electrice (Tablouri)' },
   { re: /FINDER/i, name: 'Finder', url: 'https://www.findernet.com', domeniu: 'Relee electromagnetice si temporizatoare' },
   { re: /LOVATO/i, name: 'Lovato Electric', url: 'https://www.lovatoelectric.com', domeniu: 'Aparataj electric de joasa tensiune' },
-  { re: /MEAN\s*WELL/i, name: 'Mean Well', url: 'https://www.meanwell.com', domeniu: 'Surse de alimentare in comutatie (SMPS)' },
-  { re: /\bWAGO\b/i, name: 'WAGO', url: 'https://www.wago.com', domeniu: 'Conectica industriala si borne de conexiune' }
+  { re: /MEAN\s*WELL/i, name: 'Mean Well', url: 'https://www.meanwell.com', domeniu: 'Surse de alimentare in comutatie (SMPS)' }
 ];
+
 const PART_HINTS = [
-  // --- ROCKWELL / ALLEN-BRADLEY ---
-  { re: /^(1756|1769|1732|20G|2711P)/, name: 'Allen-Bradley', utilizare: 'PLC-uri seria ControlLogix/CompactLogix sau convertizoare de frecventa PowerFlex. Echipamente de control utilizate pe scara larga in industria grea pentru a rula logica de automatizare.' },
-  
-  // --- BECKHOFF ---
-  { re: /^(CX[12589]|EK11|EL[12348]|KL[1234])/, name: 'Beckhoff', utilizare: 'Controlere IPC industriale seria CX sau module I/O EtherCAT. Ideale pentru aplicatii unde e necesara viteza de procesare ridicata in timp real si o comunicare prin bus ultra-rapida.' },
-  
-  // --- MITSUBISHI ---
-  { re: /^(FX3|FX5|Q[0-9]|FR-)/, name: 'Mitsubishi Electric', utilizare: 'PLC-uri seria FX sau invertoare de frecventa seria FR. Extrem de robuste, se gasesc des pe utilaje de ambalare, CNC-uri si benzi transportoare asiatice.' },
-  // --- KUKA & FANUC ---
-  { re: /^(KR[- ]?[1-9]|KRC)/, name: 'KUKA', utilizare: 'Brat robotic industrial sau cabinet de control (KRC). Utilizat pe liniile de asamblare auto, sudura in puncte si paletizare grea.' },
-  
-  // --- B&R AUTOMATION ---
-  { re: /^(X20|APC|PPC)/, name: 'B&R Automation', utilizare: 'Module de I/O din familia X20 sau panel-PC-uri industriale. Sistem modular excelent pentru utilaje de plastic, imprimare si ambalare.' },
-  // --- SMC & PNEUMATICA ---
-  { re: /^(SY[3579]|CQ2|CDQ2|KQ2|AW[234])/, name: 'SMC', utilizare: 'Componenta pneumatica (cilindru, valva electromagnetica, regulator de presiune aer). Regleaza fluxul de aer comprimat si transforma forta aerului in miscare mecanica liniara.' },
-  // --- IFM & TURCK (SENZORI) ---
-  { re: /^(IG[A-Z]|O5D|PN[0-9]|SI[0-9])/, name: 'ifm electronic', utilizare: 'Senzor industrial (inductiv pentru detectie metal, presiune, sau debit). Se monteaza direct pe tevi sau utilaje pentru a transmite feedback in timp real catre un PLC prin protocol IO-Link.' },
-  { re: /^(BI[1-9]|NI[1-9]|FCS|TBEN)/, name: 'Turck', utilizare: 'Senzor inductiv sau modul descentralizat (fieldbus) de I/O. Citeste si trimite semnale logice de pe teren direct catre panoul de comanda.' },
-  
-  // --- DANFOSS ---
-  { re: /^(FC[- ]?(51|101|280|302)|VLT)/, name: 'Danfoss', utilizare: 'Convertizor de frecventa seria VLT. Modifica viteza si turatia unui motor electric prin variatia frecventei tensiunii. Folosit pe benzi, pompe si ventilatoare.' },
-  // --- PILZ ---
-  { re: /^PNOZ/, name: 'Pilz', utilizare: 'Releu de siguranta PNOZ. Cel mai important echipament pentru siguranta angajatilor: decupleaza instant masinaria la apasarea ciupercii de avarie sau deschiderea usii de acces.' },
-  // --- NATIONAL INSTRUMENTS (NI) ---
-  { re: /^(cRIO|NI[- ]?92|USB[- ]?60|PXIe)/, name: 'National Instruments', utilizare: 'Modul de achizitie date (DAQ) sau controller CompactRIO. Hardware integrat deseori cu mediul de programare LabVIEW pentru teste complexe, masuratori de inalta frecventa si prototipare industriala.' },
-  // --- SIEMENS ---
-  { re: /^(6ES7|S7-1200|S7-1500)/, name: 'Siemens', utilizare: 'Modul PLC (Control Logic Programabil) seria SIMATIC S7. Creierul masinariilor automatizate, folosit pentru a rula logica de control prin programare in TIA Portal.' },
+  { re: /^(6ES7|S7-1200|S7-1500)/, name: 'Siemens', utilizare: 'Modul PLC (Control Logic Programabil) seria SIMATIC S7. Creierul masinariilor automatizate, folosit pentru a rula logica de control (TIA Portal).' },
   { re: /^3RT/, name: 'Siemens', utilizare: 'Contactor electromagnetic seria SIRIUS. Actioneaza ca un intrerupator de mare putere comandat electric. Foarte des intalnit in pornirea directa a motoarelor trifazate.' },
   { re: /^3RV/, name: 'Siemens', utilizare: 'Disjunctor de protectie a motorului (Motor Starter Protector). Decupleaza automat alimentarea daca motorul consuma prea mult curent (suprasarcina) sau face scurtcircuit.' },
-  { re: /^(3SU|3SB)/, name: 'Siemens', utilizare: 'Element de comanda si semnalizare (ex: buton de start/stop, lampa indicatoare, selector) montat de obicei pe usa tabloului electric de automatizare.' },
-  { re: /^6EP/, name: 'Siemens', utilizare: 'Sursa de alimentare SITOP. Converteste tensiunea din retea (ex: 230V AC) in tensiune continua necesara componentelor de comanda si senzorilor (ex: 24V DC).' },
-  
-  // --- SCHNEIDER ELECTRIC ---
-  { re: /^(LC1D|LC1F|LC2)/, name: 'Schneider Electric', utilizare: 'Contactor electromagnetic seria TeSys. Dispozitivul de baza pentru inchiderea si deschiderea circuitelor de forta (pornire motoare, rezistente masive de incalzire).' },
+  { re: /^(3SU|3SB)/, name: 'Siemens', utilizare: 'Element de comanda si semnalizare (ex: buton de start/stop, lampa indicatoare, selector) montat de obicei pe usa tabloului electric.' },
+  { re: /^6EP/, name: 'Siemens', utilizare: 'Sursa de alimentare SITOP. Converteste tensiunea din retea (ex: 230V AC) in tensiune continua necesara componentelor de comanda (ex: 24V DC).' },
+  { re: /^(LC1D|LC1F|LC2)/, name: 'Schneider Electric', utilizare: 'Contactor electromagnetic seria TeSys. Dispozitivul de baza pentru inchiderea si deschiderea circuitelor de forta (pornire motoare, rezistente de incalzire).' },
   { re: /^(GV2|GV3)/, name: 'Schneider Electric', utilizare: 'Disjunctor magneto-termic seria TeSys GV. Protejeaza fizic cablurile si motorul impotriva distrugerii cauzate de scurtcircuit si suprasarcina termica.' },
-  { re: /^LRD/, name: 'Schneider Electric', utilizare: 'Releu termic de suprasarcina. Se ataseaza sub un contactor (ex: LC1D) si opreste circuitul de comanda daca motorul se supraincalzeste pe parcursul rularii.' },
-  { re: /^(A9F|A9N|iC60)/, name: 'Schneider Electric', utilizare: 'Intrerupator automat miniatural (MCB - Siguranta automata). Protejeaza circuitele electrice de iluminat, prize si transformatoare mici impotriva scurtcircuitelor in tablou.' },
-  { re: /^RXM/, name: 'Schneider Electric', utilizare: 'Releu miniatura plug-in seria Zelio. Folosit pentru multiplicarea contactelor, izolarea galvanica a semnalelor catre PLC si comanda sarcinilor mici si medii.' },
-  { re: /^(XB4|XB5)/, name: 'Schneider Electric', utilizare: 'Aparataj de comanda pe panou (butoane cu retinere/revenire, ciuperca de avarie, lampi LED) seria industriala Harmony.' },
-  // --- EATON ---
-  { re: /^PKZM/, name: 'Eaton', utilizare: 'Disjunctor pentru protectia motorului. Dispozitiv robust ce contine o protectie termica (ajustabila) si una magnetica (scurtcircuit), salvand motorul de la ardere.' },
-  { re: /^(DILM|DILA)/, name: 'Eaton', utilizare: 'Contactor seria DIL. Un standard in industrie pentru separarea galvanica si actionarea in forta a echipamentelor industriale grele.' },
+  { re: /^LRD/, name: 'Schneider Electric', utilizare: 'Releu termic de suprasarcina. Se ataseaza sub un contactor (ex: LC1D) si opreste circuitul de comanda daca motorul se supraincalzeste in timp.' },
+  { re: /^(A9F|A9N|iC60)/, name: 'Schneider Electric', utilizare: 'Intrerupator automat miniatural (MCB - Siguranta automata). Protejeaza circuitele electrice de iluminat si prize impotriva scurtcircuitelor.' },
+  { re: /^RXM/, name: 'Schneider Electric', utilizare: 'Releu miniatura plug-in seria Zelio. Folosit pentru multiplicarea contactelor, izolarea galvanica a semnalelor catre PLC si comanda sarcinilor mici.' },
+  { re: /^(XB4|XB5)/, name: 'Schneider Electric', utilizare: 'Aparataj de comanda pe panou (butoane cu retinere/revenire, ciuperca de avarie, lampi LED) seria Harmony.' },
+  { re: /^PKZM/, name: 'Eaton', utilizare: 'Disjunctor pentru protectia motorului. Dispozitiv robust ce contine o protectie termica (ajustabila) si una magnetica (scurtcircuit).' },
+  { re: /^(DILM|DILA)/, name: 'Eaton', utilizare: 'Contactor seria DIL. Un standard in industrie pentru separarea galvanica si actionarea in forta a echipamentelor industriale.' },
   { re: /^FAZ/, name: 'Eaton', utilizare: 'Siguranta automata miniaturala (MCB). Protectie standard pentru circuite terminale si ramificatii de forta in tablouri de distributie.' },
-  
-  // --- OMRON ---
-  { re: /^(CJ1|CJ2|CP1)/, name: 'Omron', utilizare: 'Modul PLC (Controler Logic Programabil). Unitate de procesare compacta folosita in automatizari flexibile de utilaje de dimensiuni medii.' },
-  { re: /^(MY2|MY4|G2R)/, name: 'Omron', utilizare: 'Releu de uz general. Extrem de intalnit in dulapurile de automatizare pentru izolarea circuitelor de intrare/iesire de forta fata de componentele delicate ale PLC-ului.' },
-  { re: /^E3Z/, name: 'Omron', utilizare: 'Senzor fotoelectric standard. Echipament folosit pe benzile transportoare pentru a detecta de la distanta prezenta sau absenta unui produs in flux.' },
-  // --- PANASONIC ---
-  { re: /^AFPX/, name: 'Panasonic', utilizare: 'Controler logic programabil (PLC) seria FP-X. Ideal pentru aplicatii de control cu un numar mic si mediu de intrari/iesiri digitale in aplicatii de robotica usoara.' },
-  // --- MEAN WELL ---
-  { re: /^(NDR|MDR|HDR|SDR|LRS)/, name: 'Mean Well', utilizare: 'Sursa de alimentare in comutatie (Switching Power Supply) pentru sina DIN. Transforma curentul alternativ din retea in curent continuu stabilizat, necesar sistemelor de control.' },
-  // --- GENERIC FALLBACK ---
-  { re: /^[A-Z0-9]+/, name: null, utilizare: 'Nu exista detalii locale setate in program pentru functionalitatea piesei. Apasa butonul "Cauta Datasheet ↗" de mai sus pentru a citi direct fisa tehnica din fabrica.' }
+  { re: /^(CJ1|CJ2|CP1)/, name: 'Omron', utilizare: 'Modul PLC (Controler Logic Programabil). Unitate de procesare compacta folosita in automatizari flexibile de utilaje.' },
+  { re: /^(MY2|MY4|G2R)/, name: 'Omron', utilizare: 'Releu de uz general. Extrem de intalnit in dulapurile de automatizare pentru izolarea circuitelor de intrare/iesire de forta fata de componentele delicate (PLC).' },
+  { re: /^E3Z/, name: 'Omron', utilizare: 'Senzor fotoelectric standard. Echipament folosit pe benzile transportoare pentru a detecta de la distanta prezenta sau absenta unui produs, functionand pe baza unui fascicul de lumina.' },
+  { re: /^AFPX/, name: 'Panasonic', utilizare: 'Controler logic programabil (PLC) seria FP-X. Ideal pentru aplicatii de control cu un numar mic si mediu de intrari/iesiri digitale.' },
+  { re: /^(NDR|MDR|HDR|SDR|LRS)/, name: 'Mean Well', utilizare: 'Sursa de alimentare in comutatie (Switching Power Supply). Transforma curentul alternativ din retea in curent continuu stabilizat, necesar sistemelor de control.' },
+  { re: /^[A-Z0-9]+/, name: null, utilizare: 'Nu exista date clare despre aceasta piesa in memoria offline. Deschideti fisa tehnica apasand butonul albastru de sus pentru a afla domeniul de utilizare.' }
 ];
-const MH10_DI = { '1P':'Cod produs (producator)','2P':'Revizie produs','P':'Cod produs (client)','Q':'Cantitate','1T':'Lot fabricatie','T':'Lot fabricatie','S':'Numar de serie','1S':'Numar de serie','B':'Numar UPC/EAN incorporat','4L':'Tara de origine','16D':'Data fabricatiei','9D':'Data','6D':'Data','D':'Data','1V':'Producator (ID)','V':'Producator (ID)','K':'Comanda / ordin' };
+
+const MH10_DI = { '1P':'Cod produs (producator)','2P':'Revizie produs','P':'Cod produs (client)','Q':'Cantitate','1T':'Lot fabricatie','T':'Lot fabricatie','S':'Numar de serie','1S':'Numar de serie','4L':'Tara de origine','16D':'Data fabricatiei','9D':'Data','6D':'Data','D':'Data','1V':'Producator (ID)','V':'Producator (ID)','K':'Comanda / ordin' };
 const MH10_KEYS = Object.keys(MH10_DI).sort((a,b)=>b.length-a.length);
-// Standardul MH10.8.2 grupeaza identificatorii dupa litera finala (P=produs,
-// Q=cantitate, S=serie, T=lot/trasabilitate, L=tara/locatie, V=furnizor,
-// D=data, K=comanda). Cand intalnim un identificator NECUNOSCUT exact, il
-// clasificam totusi corect dupa aceasta conventie, in loc sa-l aruncam la
-// "necunoscut" — extrage MAI MULTA informatie utila din cod, onest etichetata
-// ca "variantă" (categorie corectă, cod exact neconfirmat).
-const MH10_FALLBACK_BY_SUFFIX = {
-  P:'Cod produs (variantă)', Q:'Cantitate (variantă)', S:'Număr de serie (variantă)',
-  T:'Lot / trasabilitate (variantă)', L:'Cod țară/locație (variantă)',
-  V:'Identificator furnizor (variantă)', D:'Dată (variantă)', K:'Comandă/ordin (variantă)'
-};
 const COUNTRIES = { JP:'Japonia',DE:'Germania',CN:'China',US:'SUA',RO:'Romania',IT:'Italia',FR:'Franta',GB:'Marea Britanie',PL:'Polonia',CZ:'Cehia',HU:'Ungaria',TR:'Turcia',KR:'Coreea de Sud',TW:'Taiwan',NL:'Olanda',CH:'Elvetia',AT:'Austria',ES:'Spania',SE:'Suedia',BE:'Belgia',IN:'India',MX:'Mexic' };
+
 function gs1Country(ean) {
   const p = parseInt(ean.substring(0,3),10);
   const R = [[0,139,'SUA / Canada'],[300,379,'Franta'],[380,380,'Bulgaria'],[383,383,'Slovenia'],[385,385,'Croatia'],[400,440,'Germania'],[450,459,'Japonia'],[460,469,'Rusia'],[471,471,'Taiwan'],[489,489,'Hong Kong'],[490,499,'Japonia'],[500,509,'Marea Britanie'],[520,521,'Grecia'],[540,549,'Belgia / Luxemburg'],[560,560,'Portugalia'],[570,579,'Danemarca'],[590,590,'Polonia'],[594,594,'Romania'],[599,599,'Ungaria'],[640,649,'Finlanda'],[690,699,'China'],[700,709,'Norvegia'],[730,739,'Suedia'],[760,769,'Elvetia'],[800,839,'Italia'],[840,849,'Spania'],[858,858,'Slovacia'],[859,859,'Cehia'],[860,860,'Serbia'],[868,869,'Turcia'],[870,879,'Olanda'],[880,881,'Coreea de Sud'],[885,885,'Thailanda'],[890,890,'India'],[893,893,'Vietnam'],[900,919,'Austria'],[930,939,'Australia'],[955,955,'Malaezia']];
@@ -585,267 +549,51 @@ function parseMH10(text) {
   if (parts.length < 2) return null;
   const fields=[]; let matched=0, productCode=null;
   for (const part of parts) {
-    // Extrage identificatorul plauzibil: 0-3 cifre urmate de o litera (ex: "1T", "16D", "4L")
-    const m = part.match(/^(\d{0,3}[A-Z])(.+)/);
-    if (!m) { fields.push({k:'Camp nerecunoscut',v:part}); continue; }
-    const di = m[1];
-    let val = m[2];
-    let label = MH10_DI[di];
-    if (!label) label = MH10_FALLBACK_BY_SUFFIX[di.slice(-1)];
-    if (!label) { fields.push({k:'Camp nerecunoscut',v:part}); continue; }
+    const di = MH10_KEYS.find(k=>part.startsWith(k) && part.length>k.length);
+    if (!di) { fields.push({k:'Camp nerecunoscut',v:part}); continue; }
     matched++;
+    let val = part.substring(di.length), label = MH10_DI[di];
     if (di==='4L' && COUNTRIES[val]) val = COUNTRIES[val]+' ('+val+')';
-    if (di.endsWith('T')) { const d=decodeYYMMDD(val); if(d) val=val+'  (probabil '+d+')'; }
-    if (di.endsWith('D')) { const d=decodeYYMMDD(val); if(d) val=d; }
-    if (di==='1P'||di==='P') productCode = productCode || val;
+    if (di==='1T'||di==='T') { const d=decodeYYMMDD(val); if(d) val=val+'  (probabil '+d+')'; }
+    if (di==='16D'||di==='9D'||di==='6D'||di==='D') { const d=decodeYYMMDD(val); if(d) val=d; }
+    if (di==='1P'||di==='P') productCode = productCode || part.substring(di.length);
     fields.push({k:label,v:val});
   }
   if (matched < 2) return null;
   return { fields, productCode, standard:'ANSI MH10.8.2 (eticheta industriala)' };
 }
-// ============ GS1 — dicționar extins + parser generic ============
-// Acopera: identificare, date, cantitati, locatii (GLN), referinte comerciale,
-// masuri/dimensiuni (familia 31xx-33xx), active industriale (GIAI/CPID).
-const GS1_AI = {
-  '00': { label: 'SSCC (cod unic de expediere)', len: 18 },
-  '01': { label: 'GTIN (cod global produs)', len: 14, gtin: true },
-  '02': { label: 'GTIN produse conținute', len: 14 },
-  '10': { label: 'Lot fabricație', max: 20 },
-  '11': { label: 'Data fabricației', len: 6, date: true },
-  '12': { label: 'Data scadentă', len: 6, date: true },
-  '13': { label: 'Data ambalării', len: 6, date: true },
-  '15': { label: 'Valabil până la', len: 6, date: true },
-  '16': { label: 'A se vinde până la', len: 6, date: true },
-  '17': { label: 'Data expirării', len: 6, date: true },
-  '20': { label: 'Variantă produs', len: 2 },
-  '21': { label: 'Număr de serie', max: 20 },
-  '22': { label: 'Variantă produs (CPV)', max: 29 },
-  '235': { label: 'TPX (identificator terț)', max: 28 },
-  '240': { label: 'Cod produs suplimentar', max: 30 },
-  '241': { label: 'Cod produs client', max: 30 },
-  '242': { label: 'Variantă comandă specială', max: 6 },
-  '243': { label: 'Cod componentă ambalaj', max: 20 },
-  '250': { label: 'Al doilea număr de serie', max: 30 },
-  '251': { label: 'Referință entitate sursă', max: 30 },
-  '253': { label: 'GDTI (identificator document)', max: 30 },
-  '254': { label: 'Extensie GLN', max: 20 },
-  '255': { label: 'GCN (cupon global)', max: 25 },
-  '30': { label: 'Cantitate', max: 8 },
-  '37': { label: 'Nr. articole conținute', max: 8 },
-  '400': { label: 'Nr. comandă client (PO)', max: 30 },
-  '401': { label: 'Nr. expediție (GINC)', max: 30 },
-  '402': { label: 'GSIN (identificator expediere)', len: 17 },
-  '403': { label: 'Cod de rutare', max: 30 },
-  '410': { label: 'GLN destinatar', len: 13 },
-  '411': { label: 'GLN facturare', len: 13 },
-  '412': { label: 'GLN furnizor', len: 13 },
-  '413': { label: 'GLN expediat pentru', len: 13 },
-  '414': { label: 'GLN locație fizică', len: 13 },
-  '415': { label: 'GLN emitent factură', len: 13 },
-  '416': { label: 'GLN locație producție', len: 13 },
-  '417': { label: 'GLN parte contractantă', len: 13 },
-  '420': { label: 'Cod poștal destinație', max: 20 },
-  '422': { label: 'Țara de origine (cod numeric)', len: 3 },
-  '423': { label: 'Țara de procesare inițială', max: 15 },
-  '424': { label: 'Țara de procesare (cod numeric)', len: 3 },
-  '425': { label: 'Țara de dezasamblare', max: 15 },
-  '426': { label: 'Țara procesării complete (cod numeric)', len: 3 },
-  '7001': { label: 'Cod NATO (NSN)', len: 13 },
-  '7003': { label: 'Data și ora expirării', len: 10 },
-  '8002': { label: 'ID telefon mobil', max: 20 },
-  '8003': { label: 'GRAI (activ returnabil)', max: 30 },
-  '8004': { label: 'GIAI (identificator activ individual)', max: 30 },
-  '8005': { label: 'Preț per unitate de măsură', len: 6 },
-  '8006': { label: 'GCTIN (componentă produs)', len: 18 },
-  '8007': { label: 'IBAN', max: 34 },
-  '8008': { label: 'Data și ora producției', max: 12 },
-  '8010': { label: 'CPID (identificator componentă)', max: 30 },
-  '8011': { label: 'Serie CPID', max: 12 },
-  '8012': { label: 'Versiune software', max: 20 },
-  '8013': { label: 'GMN (număr model global)', max: 25 },
-  '8017': { label: 'GSRN furnizor', len: 18 },
-  '8018': { label: 'GSRN destinatar', len: 18 },
-  '8019': { label: 'Nr. instanță serviciu', max: 10 },
-  '8020': { label: 'Referință plată', max: 25 },
-  '90': { label: 'Informație convenită între parteneri', max: 30 }
-};
-const GS1_AI_KEYS = Object.keys(GS1_AI).sort((a,b)=>b.length-a.length);
-
-// Familia de AI-uri de măsurare 31xx-33xx: ultima cifră = nr. de zecimale,
-// primele 3 cifre determină unitatea. Confirmată pentru acest interval;
-// dincolo de el, GS1 are variante mai specializate, mai rar întâlnite.
-const GS1_MEASURE_FAMILIES = {
-  '310':'Greutate netă (kg)','311':'Lungime (m)','312':'Lățime/diametru (m)',
-  '313':'Adâncime/înălțime (m)','314':'Arie (m²)','315':'Volum net (l)','316':'Volum net (m³)',
-  '320':'Greutate netă (lb)','321':'Lungime (in)','322':'Lungime (ft)','323':'Lungime (yd)',
-  '324':'Lățime (in)','325':'Lățime (ft)','326':'Lățime (yd)',
-  '327':'Înălțime (in)','328':'Înălțime (ft)','329':'Înălțime (yd)',
-  '330':'Greutate brută (kg)','331':'Lungime logistică (m)','332':'Lățime logistică (m)',
-  '333':'Înălțime logistică (m)','334':'Arie logistică (m²)','335':'Volum logistic (l)','336':'Volum logistic (m³)'
-};
-function gs1MeasureInfo(ai) {
-  if (!/^3\d{3}$/.test(ai)) return null;
-  const fam = ai.substring(0,3), decimals = parseInt(ai.substring(3),10);
-  return { label: GS1_MEASURE_FAMILIES[fam] || ('Măsură (AI ' + ai + ')'), decimals };
-}
-
-// Validare cifră de control EAN/UPC/GTIN (algoritm standard GS1, mod 10).
-// Detectează citiri OCR/scan greșite — 100% derivat din cod, fără internet.
-function validateGTINCheckDigit(code) {
-  if (!/^\d{8}$|^\d{12,14}$/.test(code)) return null;
-  const digits = code.split('').map(Number);
-  const check = digits.pop();
-  let sum = 0;
-  digits.reverse().forEach((d, idx) => { sum += d * (idx % 2 === 0 ? 3 : 1); });
-  const calc = (10 - (sum % 10)) % 10;
-  return calc === check;
-}
-
-// Cifra indicator dintr-un GTIN-14 arată nivelul de ambalare.
-function gtinPackagingLevel(gtin14) {
-  if (!/^\d{14}$/.test(gtin14)) return null;
-  const ind = gtin14[0];
-  if (ind === '0') return 'Unitate de bază (identic cu GTIN-13/12)';
-  if (ind === '9') return 'Cantitate variabilă';
-  return 'Nivel de ambalare superior ' + ind + ' (cutie/palet — stabilit între parteneri)';
-}
-
 function parseGS1(text) {
-  // Varianta 1: formatul demonstrativ, lizibil, cu paranteze "(01)...(10)..."
+  const AI = {'01':['GTIN (cod global produs)',14],'10':['Lot fabricatie',0],'11':['Data fabricatiei',6],'13':['Data ambalarii',6],'15':['Valabil pana la',6],'17':['Data expirarii',6],'21':['Numar de serie',0],'30':['Cantitate',0]};
+  const fields=[];
   const paren = text.match(/\((\d{2,4})\)([^\(]*)/g);
-  if (paren && paren.length >= 1) {
-    const fields = [];
+  if (paren && paren.length>=1) {
     for (const seg of paren) {
       const m = seg.match(/\((\d{2,4})\)(.*)/);
-      const ai = m[1], val = m[2].trim(), def = GS1_AI[ai];
-      let label = def ? def.label : 'AI ' + ai, v = val;
-      if (def && def.date) { const d = decodeYYMMDD(val); if (d) v = d; }
-      if (def && def.gtin) {
-        const level = gtinPackagingLevel(val);
-        const valid = validateGTINCheckDigit(val);
-        fields.push({ k: label, v: v });
-        if (level) fields.push({ k: 'Nivel ambalare', v: level });
-        if (valid !== null) fields.push({ k: 'Verificare cod', v: valid ? '✓ checksum corect' : '⚠ checksum incorect — posibilă eroare de citire' });
-        continue;
-      }
-      fields.push({ k: label, v: v });
+      const ai=m[1], val=m[2].trim(), def=AI[ai];
+      let label = def?def[0]:'AI '+ai, v=val;
+      if (def && def[1]===6) { const d=decodeYYMMDD(val); if(d) v=d; }
+      fields.push({k:label,v:v});
     }
-    return { fields, standard: 'GS1' };
+    return { fields, standard:'GS1' };
   }
-
-  // Varianta 2: șirul BRUT, exact cum îl livrează camera la o scanare reală —
-  // câmpurile de lungime variabilă se termină la separatorul GS1 (\u001d) sau
-  // la finalul textului.
-  const GS = '\u001d';
-  let s = text.replace(/^\]C1/, ''); // unele scanere prefixeaza simbolul GS1-128
-  const fields = [];
-  let i = 0, matched = 0;
-  while (i < s.length) {
-    let ai = null, def = null, isMeasure = false;
-    for (const len of [4,3,2]) {
-      const cand = s.substr(i, len);
-      if (GS1_AI[cand]) { ai = cand; def = GS1_AI[cand]; break; }
-      if (/^3\d{3}$/.test(cand)) { ai = cand; isMeasure = true; break; }
-    }
-    if (!ai) break;
-    i += ai.length;
-    if (isMeasure) {
-      const raw = s.substr(i, 6); i += 6;
-      if (!/^\d{6}$/.test(raw)) break;
-      const info = gs1MeasureInfo(ai);
-      const cut = 6 - info.decimals;
-      const val = info.decimals > 0 ? raw.substring(0, cut) + ',' + raw.substring(cut) : raw;
-      fields.push({ k: info.label, v: val });
-    } else if (def.len) {
-      const val = s.substr(i, def.len); i += def.len;
-      let v = val;
-      if (def.date) { const d = decodeYYMMDD(val); if (d) v = d; }
-      fields.push({ k: def.label, v: v });
-      if (def.gtin) {
-        const level = gtinPackagingLevel(val);
-        const valid = validateGTINCheckDigit(val);
-        if (level) fields.push({ k: 'Nivel ambalare', v: level });
-        if (valid !== null) fields.push({ k: 'Verificare cod', v: valid ? '✓ checksum corect' : '⚠ checksum incorect — posibilă eroare de citire' });
-      }
-    } else {
-      let end = s.indexOf(GS, i);
-      if (end === -1) end = s.length;
-      fields.push({ k: def.label, v: s.substring(i, end) });
-      i = end + (s[end] === GS ? 1 : 0);
-    }
-    matched++;
-  }
-  if (matched === 0) return null;
-  return { fields, standard: 'GS1' };
-}
-
-// ============ Conținut QR uzual (dincolo de piese industriale) ============
-// Raspunde direct intrebarii "care e maximul extractibil dintr-un cod":
-// WiFi, carte de vizita, coordonate GPS, telefon, email, SMS.
-function detectQrContentType(text) {
-  if (/^WIFI:/i.test(text)) {
-    const ssid = (text.match(/S:([^;]*)/) || [])[1];
-    const sec = (text.match(/T:([^;]*)/) || [])[1];
-    const pass = (text.match(/P:([^;]*)/) || [])[1];
-    return { label: 'Configurare WiFi', fields: [
-      { k: 'Rețea (SSID)', v: ssid || '—' },
-      { k: 'Securitate', v: sec || '—' },
-      { k: 'Parolă', v: pass || '(fără parolă)' }
-    ]};
-  }
-  if (/^BEGIN:VCARD/i.test(text)) {
-    const name = (text.match(/FN:(.*)/i) || [])[1];
-    const tel = (text.match(/TEL[^:]*:(.*)/i) || [])[1];
-    const email = (text.match(/EMAIL[^:]*:(.*)/i) || [])[1];
-    return { label: 'Carte de vizită (vCard)', fields: [
-      { k: 'Nume', v: (name || '—').trim() },
-      { k: 'Telefon', v: (tel || '—').trim() },
-      { k: 'Email', v: (email || '—').trim() }
-    ]};
-  }
-  if (/^geo:/i.test(text)) {
-    const c = text.replace('geo:', '').split(',');
-    return { label: 'Coordonate GPS', fields: [{ k: 'Latitudine', v: c[0] || '—' }, { k: 'Longitudine', v: c[1] || '—' }] };
-  }
-  if (/^tel:/i.test(text)) return { label: 'Număr de telefon', fields: [{ k: 'Telefon', v: text.replace('tel:', '') }] };
-  if (/^mailto:/i.test(text)) return { label: 'Adresă de email', fields: [{ k: 'Email', v: text.replace('mailto:', '') }] };
-  if (/^(smsto:|sms:)/i.test(text)) return { label: 'Mesaj SMS', fields: [{ k: 'Către', v: text.replace(/^(smsto:|sms:)/i, '').split(':')[0] }] };
   return null;
 }
+
 function analyzeCode(text, formatName) {
   const fields=[]; let productCode=null, standard=null, website=null, brandName=null, brandDomeniu=null, infoUtilizare=null;
-
-  // Conținut QR uzual (WiFi/vCard/GPS/telefon/email) — verificat ÎNAINTEA
-  // interpretării ca link simplu, ca să afișăm câmpurile structurate, nu doar "e un link".
-  const qrType = detectQrContentType(text);
-  if (qrType) {
-    fields.push({ k: 'Tip conținut', v: qrType.label });
-    fields.push(...qrType.fields);
-    standard = qrType.label;
-    if (/^geo:/i.test(text)) {
-      const c = text.replace('geo:', '').split(',');
-      website = { name: 'Deschide în Google Maps ↗', url: 'https://www.google.com/maps?q=' + c[0] + ',' + c[1], direct: true };
-    } else {
-      website = { url: '#' };   // WiFi/vCard/telefon/email/SMS — nu necesită căutare online
-    }
-  }
-
-  if (!standard && /^https?:\/\//i.test(text)) {
+  if (/^https?:\/\//i.test(text)) {
     try { website={name:new URL(text).hostname,url:text,direct:true}; fields.push({k:'Tip continut',v:'Link web'}); } catch(e){}
   }
-  if (!website && !standard) { const mh=parseMH10(text); if(mh){ fields.push(...mh.fields); productCode=mh.productCode; standard=mh.standard; } }
+  if (!website) { const mh=parseMH10(text); if(mh){ fields.push(...mh.fields); productCode=mh.productCode; standard=mh.standard; } }
   if (!standard && !website) { const gs=parseGS1(text); if(gs){ fields.push(...gs.fields); standard=gs.standard; } }
   if (/^(EAN_13|EAN_8|UPC_A|UPC_E)$/.test(formatName) && /^\d{7,14}$/.test(text)) {
     standard='GS1 '+formatName.replace('_','-');
     fields.push({k:'GTIN (cod global produs)',v:text});
     const c=gs1Country(text.padStart(13,'0')); if(c) fields.push({k:'Tara de inregistrare a producatorului',v:c});
-    // Validare checksum — semnalează dacă scanarea a citit corect codul
-    const valid = validateGTINCheckDigit(text);
-    if (valid !== null) fields.push({k:'Verificare cod', v: valid ? '✓ checksum corect' : '⚠ checksum incorect — posibilă eroare de citire, rescanați'});
   }
   
   if (fields.length===0) { productCode=text.trim(); }
-  if (standard && !qrType) fields.unshift({k:'Standard detectat',v:standard});
+  if (standard) fields.unshift({k:'Standard detectat',v:standard});
   
   const searchCode = productCode || text;
   
@@ -863,17 +611,16 @@ function analyzeCode(text, formatName) {
     if (full) brandDomeniu = full.domeniu; 
   }
   
-  // Link super inteligent si targetat pentru Google
   if (!website) {
     const qBrand = brandName ? brandName + ' ' : '';
     const qPart = searchCode.substring(0,25);
-    // Cauta specific fise tehnice PDF ale pieselor industriale
     const q = encodeURIComponent(qBrand + qPart + ' datasheet filetype:pdf');
     website={name:'Deschide Fisa Tehnica (PDF) ↗',url:'https://www.google.com/search?q='+q,direct:false};
   }
   
   return { fields, website, brandName, brandDomeniu, productCode: searchCode, infoUtilizare, isUrl:/^https?:\/\//i.test(text) };
 }
+
 /* =====================================================================
    [C] PORNIRE, SCANARE, PAUZA & REDIMENSIONARE DRAG
    ===================================================================== */
@@ -901,6 +648,7 @@ async function bootSystem() {
   btnStart.disabled = false;
   applyBoxCSS(); 
 }
+
 let isResizing = false;
 const handles = document.querySelectorAll('.resize-handle');
 handles.forEach(h => {
@@ -911,6 +659,7 @@ document.addEventListener('mousemove', dragMove);
 document.addEventListener('touchmove', dragMove, {passive: false});
 document.addEventListener('mouseup', dragEnd);
 document.addEventListener('touchend', dragEnd);
+
 function dragStart(e) {
     if (e.target.classList.contains('resize-handle')) {
         isResizing = true;
@@ -922,15 +671,20 @@ function dragMove(e) {
     e.preventDefault();
     let clientX = e.type.includes('mouse') ? e.clientX : e.touches[0].clientX;
     let clientY = e.type.includes('mouse') ? e.clientY : e.touches[0].clientY;
+
     const viewRect = viewfinder.getBoundingClientRect();
     const centerX = viewRect.left + viewRect.width / 2;
     const centerY = viewRect.top + viewRect.height / 2;
+
     let newW = Math.abs(clientX - centerX) * 2;
     let newH = Math.abs(clientY - centerY) * 2;
+
     const viewW = viewRect.width;
     const viewH = viewRect.height;
+
     newW = Math.max(60, Math.min(newW, viewW * 0.95));
     newH = Math.max(60, Math.min(newH, viewH * 0.95));
+
     boxWidthPercent = (newW / viewW) * 100;
     boxHeightPercent = (newH / viewH) * 100;
     applyBoxCSS();
@@ -949,13 +703,16 @@ function applyBoxCSS() {
     boxPreview.style.width = boxWidthPercent + '%';
     boxPreview.style.height = boxHeightPercent + '%';
 }
+
 async function startScan() {
   const cameraId = cameraSelect.value;
   if (!cameraId) return;
+
   const selectedOption = cameraSelect.options[cameraSelect.selectedIndex];
   const cameraLabel = selectedOption ? selectedOption.textContent.toLowerCase() : '';
   let isFrontCamera = cameraLabel.includes('front') || cameraLabel.includes('user') || cameraLabel.includes('selfie');
   viewfinder.classList.toggle('mirror', isFrontCamera);
+
   scanner = new Html5Qrcode('reader', {
     formatsToSupport: FORMATS,
     experimentalFeatures: { useBarCodeDetectorIfSupported: true }
@@ -982,6 +739,7 @@ async function startScan() {
       },
       () => {}
     );
+
     try {
       const videoEl = document.querySelector('#reader video');
       const track = videoEl && videoEl.srcObject ? videoEl.srcObject.getVideoTracks()[0] : null;
@@ -991,6 +749,7 @@ async function startScan() {
         viewfinder.classList.toggle('mirror', realIsFront);
       }
     } catch (e) {}
+
     running = true; isPaused = false;
     viewfinder.classList.add('active');
     placeholder.style.display = 'none';
@@ -1006,6 +765,7 @@ async function startScan() {
     scanner = null;
   }
 }
+
 async function stopScan() {
   if (scanner && running) { try { if(isPaused) scanner.resume(); await scanner.stop(); scanner.clear(); } catch(e){} }
   scanner=null; running=false; isPaused=false;
@@ -1020,6 +780,7 @@ async function stopScan() {
   resultSection.classList.remove('visible');
   setStatus('Oprit','Scanarea a fost oprita.');
 }
+
 function handleSuccessfulScan(codCitit, sursa) {
   if (isPaused) return;
   isPaused = true;
@@ -1030,13 +791,19 @@ function handleSuccessfulScan(codCitit, sursa) {
   if (navigator.vibrate) navigator.vibrate([100,50,100]);
   showResult(codCitit, sursa);
 }
-btnNextScan.addEventListener('click', () => {
+
+// Functie globala pentru a reporni scanner-ul (ascunde ecranul de rezultat)
+function resumeScanner() {
   resultSection.classList.remove('visible');
   viewfinder.classList.remove('is-paused');
   isPaused = false;
   btnOcr.disabled = false;
-  if (scanner && running) { try { scanner.resume(); } catch(e){} setStatus('Scanare activa','Se asteapta o noua eticheta...','ok'); }
-});
+  if (scanner && running) { 
+      try { scanner.resume(); } catch(e){} 
+      setStatus('Scanare activa', 'Se asteapta o noua eticheta...', 'ok'); 
+  }
+}
+
 /* =====================================================================
    [D] OCR — LA CERERE
    ===================================================================== */
@@ -1073,6 +840,7 @@ function otsuThreshold(hist, total) {
   }
   return threshold;
 }
+
 function preprocessForOcr(srcCanvas) {
   const ctx = srcCanvas.getContext('2d');
   const img = ctx.getImageData(0, 0, srcCanvas.width, srcCanvas.height);
@@ -1093,6 +861,7 @@ function preprocessForOcr(srcCanvas) {
   ctx.putImageData(img, 0, 0);
   return srcCanvas;
 }
+
 const CONFUSABLE_PAIRS = { '0':'O','O':'0','1':'I','I':'1','5':'S','S':'5','8':'B','B':'8','2':'Z','Z':'2','6':'G','G':'6' };
 function correctConfusables(code) {
   if (!code) return code;
@@ -1106,6 +875,7 @@ function correctConfusables(code) {
   }
   return code;
 }
+
 function extractValidProductCode(rawText) {
   const cleanText = (rawText || '').toUpperCase();
   const regexPatterns = [ /[A-Z]{2,6}[-–]?[0-9]{2,10}[A-Z0-9]*/g, /[A-Z0-9]{1,6}[-–][A-Z0-9]{2,14}/g ];
@@ -1127,6 +897,7 @@ function extractValidProductCode(rawText) {
   if (bestScore < 2) return null;
   return correctConfusables(best);
 }
+
 async function runOcr() {
   const video = document.querySelector('#reader video');
   if (!video || !video.videoWidth) {
@@ -1148,11 +919,13 @@ async function runOcr() {
   cx.imageSmoothingEnabled = true;
   cx.drawImage(video, sx, sy, cropW, cropH, 0, 0, canvas.width, canvas.height);
   preprocessForOcr(canvas);
+
   if (!isPaused && scanner && running) {
     try { scanner.pause(true); } catch(e){}
     isPaused = true;
     viewfinder.classList.add('is-paused');
   }
+
   btnOcr.disabled = true;
   const originalBtnText = btnOcr.textContent;
   try {
@@ -1168,10 +941,13 @@ async function runOcr() {
         tessedit_char_whitelist: 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789-,./ ' 
       });
     }
+
     setStatus('OCR', 'Se analizeaza eticheta...', 'warn');
     btnOcr.textContent = 'Se proceseaza...';
+
     const { data } = await ocrWorker.recognize(canvas);
     const finalCode = extractValidProductCode(data.text);
+
     if (finalCode) {
         showResult(finalCode, 'TEXT (OCR)');
     } else {
@@ -1191,30 +967,60 @@ async function runOcr() {
   } finally {
     btnOcr.textContent = originalBtnText;
     if (!isPaused) btnOcr.disabled = false;
+
+    if (typeof canvas !== 'undefined' && canvas) {
+        canvas.width = 0;
+        canvas.height = 0;
+    }
   }
 }
+
 /* =====================================================================
-   [E] AFISARE
+   [E] AFISARE & BATCH PROCESSING (LOTURI)
    ===================================================================== */
-function showResult(text, sursa) {
+   
+// Actualizam textele butoanelor si badge-ul informativ pe baza numarului de piese din lot
+function actualizeazaInterfataLot() {
+    if (lotCurentPiese.length > 0) {
+        batchStatusBar.style.display = 'block';
+        batchStatusBar.textContent = `Piese aflate în lotul curent: ${lotCurentPiese.length}`;
+        // +1 pentru ca logica presupune trimiterea si a celei aflate acum pe ecran
+        btnSendBatch.innerHTML = `✈ GRUPEAZA SI TRIMITE (${lotCurentPiese.length + 1})`; 
+    } else {
+        batchStatusBar.style.display = 'none';
+        btnSendBatch.innerHTML = `✈ TRIMITE DIRECT (1)`;
+    }
+}
+
+// Aceasta functie stocheaza piesa curenta de pe ecran in memorie
+function adaugaPiesaCurentaInLot() {
+    const codCurent = rawCodeInput.value.trim();
+    if (codCurent) {
+        lotCurentPiese.push({
+            cod: codCurent,
+            ora_scanarii: new Date().toISOString()
+        });
+        actualizeazaInterfataLot();
+    }
+}
+
+async function showResult(text, sursa) {
   lastFormatName = sursa;
   const a = analyzeCode(text, sursa);
   resultFormat.textContent = 'Detectat: ' + sursa;
   rawCodeInput.value = a.productCode;
-  // Actualizare UI pentru link de cautare fisa tehnica
-  if (a.website.url === '#') {
-    websiteLink.style.display = 'none';
-  } else {
-    websiteLink.textContent = a.website.direct ? ('Deschide: ' + a.website.name + ' ↗') : a.website.name;
-    websiteLink.href = a.website.url;
-    websiteLink.className = 'website-link-box' + (a.website.direct ? '' : ' search');
-    websiteLink.style.display = 'block';
-  }
-  // Actualizare Producator si Domeniu
+
+  websiteLink.textContent = a.website.direct ? ('Deschide: ' + a.website.name + ' ↗') : a.website.name;
+  websiteLink.href = a.website.url;
+  websiteLink.className = 'website-link-box' + (a.website.direct ? '' : ' search');
+  websiteLink.style.display = 'block';
+
+  setStatus('Se proceseaza', 'Piesa analizată. Aștept acțiune...', 'warn');
+
   infoProducator.textContent = a.brandName || 'Neidentificat';
   if (a.brandDomeniu) { infoDomeniuRow.style.display = 'block'; infoDomeniu.textContent = a.brandDomeniu; }
   else { infoDomeniuRow.style.display = 'none'; }
-  // Actualizare Detalii extrase din coduri speciale EAN/QR
+
   let lot='—', dataFab=null; const rest=[];
   a.fields.forEach(f=>{
     if (/lot|serie/i.test(f.k) && lot==='—') { lot=f.v; return; }
@@ -1227,24 +1033,73 @@ function showResult(text, sursa) {
   if (dataFab) det.push('Fabricatie: '+dataFab);
   rest.forEach(r=>det.push(r));
   infoDetalii.textContent = det.length ? det.join('  ·  ') : 'Nicio informatie in cod.';
-  // Afisare Utilizare Piesa (creierul intern din regex)
+
   if (a.infoUtilizare) {
       utilizareBlurb.classList.add('visible');
       utilizareText.textContent = a.infoUtilizare;
   } else {
       utilizareBlurb.classList.remove('visible');
   }
+
+  // Cand apare o piesa noua, ne asiguram ca interfata se potriveste cu marimea lotului
+  actualizeazaInterfataLot();
+
   resultSection.classList.add('visible');
-  if (!/Nu am gasit|am afisat textul/.test(statusDetail.textContent)) setStatus('In pauza','Rezultat afisat. Apasa „URMATOAREA SCANARE".','warn');
+  if (!/Nu am gasit|am afisat textul/.test(statusDetail.textContent)) setStatus('In pauza','Rezultat afisat. Alegeti o actiune.','ok');
   resultSection.scrollIntoView({ behavior:'smooth', block:'start' });
 }
-// Cand editezi codul brut (in caz de eroare OCR) si apesi Aplica, se recalculeaza automat totul
+
+// ================= BUTOANELE PENTRU FLUX ================= //
+
+// 1. ADAUGA SI CONTINUA (Next Scan)
+btnNextScan.addEventListener('click', () => {
+  adaugaPiesaCurentaInLot(); // Salvam piesa in memorie
+  resumeScanner();           // Deschidem camera
+});
+
+// 2. STERGE SCANAREA (Discard)
+btnDeleteScan.addEventListener('click', () => {
+  // Pur si simplu nu o bagam in lot si redeschidem camera. Lotul pastreaza piesele din urma.
+  resumeScanner();
+  setStatus('Scanare activa', 'Ultima citire a fost ștearsă. Scanați din nou.', 'ok');
+});
+
+// 3. GRUPEAZA SI TRIMITE
+btnSendBatch.addEventListener('click', () => {
+  adaugaPiesaCurentaInLot(); // Salvam si piesa vizibila acum inainte de trimitere
+  
+  // Aici incepe logica de comunicare cu Serverul/API-ul
+  setStatus('Trimitere...', `Se transmit ${lotCurentPiese.length} piese catre server...`, 'warn');
+  
+  /* EXEMPLU DE INTEGRARE (In viitor, aici vom pune fetch-ul catre server)
+  try {
+      await fetch('URL_SERVER', {
+          method: 'POST',
+          body: JSON.stringify(lotCurentPiese)
+      });
+  } catch(e) {}
+  */
+  
+  // Simulam trimiterea cu succes pentru moment
+  setTimeout(() => {
+      alert(`SUCCES! Lotul de ${lotCurentPiese.length} produse a fost trimis catre baza de date:\n\n` + 
+            lotCurentPiese.map(p => p.cod).join('\n'));
+            
+      // Golim memoria si inchidem
+      lotCurentPiese = [];
+      actualizeazaInterfataLot();
+      resumeScanner();
+      setStatus('Pregatit', 'Lot trimis cu succes in baza de date!', 'ok');
+  }, 800);
+});
+
 btnRecalc.addEventListener('click', () => {
   const corrected = rawCodeInput.value.trim();
   if (!corrected) return;
   showResult(corrected, lastFormatName);
 });
 rawCodeInput.addEventListener('keydown', (e) => { if (e.key === 'Enter') btnRecalc.click(); });
+
 function beep() {
   try {
     const ctx = new (window.AudioContext||window.webkitAudioContext)();
