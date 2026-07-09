@@ -86,7 +86,7 @@
   
   .controls { display: flex; gap: 10px; flex-wrap: wrap; }
   select, button, input[type="text"] { font-family: var(--font-sans); font-size: 13.5px; font-weight: 600; border-radius: var(--radius-sm); border: 1px solid var(--border); padding: 11px 14px; background: var(--surface); color: var(--ink); transition: all .15s ease; }
-  select { flex: 1 1 220px; font-weight: 500; cursor: pointer; }
+  select, input[type="text"] { flex: 1 1 220px; font-weight: 500; cursor: text; }
   input[type="text"]:focus, select:focus { outline: none; border-color: var(--blue); box-shadow: 0 0 0 3px rgba(31,111,181,.1); }
   button { cursor: pointer; box-shadow: 0 1px 0 rgba(32,38,44,.06); }
   button:hover:not(:disabled) { border-color: #c9c2b0; }
@@ -201,8 +201,9 @@
         </div>
 
         <div class="data-item">
-          <span class="data-label">Producator (Manual)</span>
-          <input type="text" id="inputProducator" placeholder="Ex: Phoenix Contact / Siemens / Eaton" style="width: 100%;">
+          <span class="data-label">Producator</span>
+          <input list="listaFurnizori" id="inputProducator" placeholder="Tastează pentru a căuta sau alege din listă..." style="width: 100%;">
+          <datalist id="listaFurnizori"></datalist>
         </div>
       </div>
       
@@ -225,6 +226,19 @@ const N8N_URL_INSERT = "https://automations.sferal.ai/aloe/webhook/electrozep-in
 const TABLE_CATALOG = "oferta_catalog_produse";
 const TABLE_SCAN = "INV_scan_stoc";
 
+// AM EXTRA DIN EXCELUL TAU TOATE FIRMELE SI LE-AM PUS AICI:
+const furnizoriDinExcel = [
+    "ACREL SHANGHAI ACREL LTD", "AFRISO SRL", "ALEX FAST INSTAL", "ARRAY ELECTRONIC CO LTD",
+    "ATELIER ELECTRIC KIBEDI SRL", "ATYS CO ROMANIA SRL", "AUTONIX CO LTD", "CHORUS RESEARCH ENGINEERING DISTRIBUTION",
+    "CIT AUTOMATIZARI SRL", "CONSOLIGHT COM SRL", "EL.CO SRL", "ELECTROBLUE SRL",
+    "ELECTROGLOBAL SA", "IPROEB SA", "LEGRAND ROMANIA SRL", "LIMATHERM SENSOR",
+    "MARKUS TEHNIK SRL", "MIXVILL KERESKEDELMI ES SZOLGALTATO KFT", "OZANALATEX SRL", "PANASONIC INDUSTRY EUROPE GMBH",
+    "PHOENIX CONTACT SRL", "PRODPROIECT 96 IMPEX SRL", "PROELECTRIC SRL", "PROMELEK XXI SA",
+    "ROM TELTEKS CABLU IMPEX SRL", "SCHRACK TECHNIK SRL", "SEA ROMANIA SRL", "SENETIC DISTRIBUTION SRL",
+    "SHENZHEN ATC TECHNOLOGY", "TECH-CON INDUSTRY SRL", "TECHNOELECTRIC SRL", "TOHO ELECTRONICS INC.",
+    "TOOLTECH INTERNATIONAL SRL", "XIAN CHINA STAR MC LTD"
+];
+
 let catalogProduse = [];
 let currentOperation = 'INTRARE';
 
@@ -240,9 +254,10 @@ const resultSection = document.getElementById('resultSection');
 const resultFormat = document.getElementById('resultFormat');
 const rawCodeInput = document.getElementById('rawCodeInput');
 
-// Noile campuri de completat manual/dropdown
+// Campuri manuale
 const selectDenumire = document.getElementById('selectDenumire');
 const inputProducator = document.getElementById('inputProducator');
+const dataListFurnizori = document.getElementById('listaFurnizori'); // Lista ascunsa pentru search
 
 const opIn = document.getElementById('opIn');
 const opOut = document.getElementById('opOut');
@@ -257,6 +272,17 @@ let lastFormatName = 'Cod Standard';
 let lotCurentPiese = [];
 
 const FORMATS = [ Html5QrcodeSupportedFormats.CODE_128, Html5QrcodeSupportedFormats.DATA_MATRIX, Html5QrcodeSupportedFormats.QR_CODE, Html5QrcodeSupportedFormats.CODE_39 ];
+
+// POPULEAZA DROPDOWN-UL DE FURNIZORI LA INCARCAREA PAGINII
+function incarcaFurnizori() {
+    // Curățăm lista doar în caz că există ceva în ea
+    dataListFurnizori.innerHTML = "";
+    furnizoriDinExcel.forEach(furnizor => {
+        const option = document.createElement('option');
+        option.value = furnizor; // Aceasta valoare o cauta/selecteaza
+        dataListFurnizori.appendChild(option);
+    });
+}
 
 // ================= FETCH BAZA DE DATE =================
 async function preiaCatalogDinDB() {
@@ -307,6 +333,7 @@ async function initCameras() {
 }
 
 async function bootSystem() {
+  incarcaFurnizori(); // Apelăm încărcarea listei de furnizori
   const ok = await initCameras();
   if (!ok) return setStatus('Eroare','Nicio camera detectata.','err');
   await preiaCatalogDinDB();
@@ -422,7 +449,7 @@ function actualizeazaInterfataLot() {
 
 function adaugaPiesaCurentaInLot() {
     const codCurent = rawCodeInput.value.trim();
-    // Preluam datele exact din lista dropdown si din casuta text completata de tine
+    // Preluam datele exact din lista dropdown si din casuta text completata
     const prodCurent = inputProducator.value.trim();
     const denumireCurenta = selectDenumire.value;
 
@@ -441,7 +468,6 @@ async function showResult(text, sursa) {
   lastFormatName = sursa;
   resultFormat.textContent = 'Detectat: ' + sursa;
   
-  // Punem doar codul in casuta. Restul le alegi tu din ecran.
   rawCodeInput.value = text;
   
   actualizeazaInterfataLot();
