@@ -335,31 +335,21 @@ async function startScan() {
   const cameraId = cameraSelect.value; if (!cameraId) return;
   const isFrontCamera = cameraSelect.options[cameraSelect.selectedIndex]?.textContent.toLowerCase().includes('front');
   viewfinder.classList.toggle('mirror', isFrontCamera);
-  
   scanner = new Html5Qrcode('reader', { formatsToSupport: FORMATS, experimentalFeatures: { useBarCodeDetectorIfSupported: true } });
-  
   const config = {
-    fps: 10, // OPTIMIZARE 1: Scăzut de la 20 la 10 pentru viteză și claritate
+    fps: 20, 
     qrbox: function (w, h) { return { width: Math.floor(w * (boxWidthPercent / 100)), height: Math.floor(h * (boxHeightPercent / 100)) }; },
     videoConstraints: { deviceId: { exact: cameraId }, width: { ideal: 1920 }, height: { ideal: 1080 }, advanced: [{ focusMode: 'continuous' }] }
   };
-  
   try {
     await scanner.start(cameraId, config, (decodedText, decodedResult) => {
-        
-        // OPTIMIZARE 2: Afișăm în consolă absolut tot ce a extras scanner-ul
-        console.log("Date brute scanner (RAW):", decodedResult);
-        
         handleSuccessfulScan(decodedText, decodedResult?.result?.format?.formatName || 'Cod Standard');
     }, () => {});
-    
     running = true; isPaused = false;
     viewfinder.classList.add('active'); placeholder.style.display = 'none'; boxPreview.style.display = 'block';
     btnStart.style.display = 'none'; btnStop.style.display = 'inline-block'; btnOcr.style.display = 'inline-block'; cameraSelect.disabled = true;
     setStatus('Scanare activa','Cadrati codul in zona vizibila.','ok');
-  } catch (err) { 
-    setStatus('Eroare','Camera nu a pornit: '+err,'err'); scanner = null; 
-  }
+  } catch (err) { setStatus('Eroare','Camera nu a pornit: '+err,'err'); scanner = null; }
 }
 async function stopScan() {
   if (scanner && running) { try { if(isPaused) scanner.resume(); await scanner.stop(); scanner.clear(); } catch(e){} }
