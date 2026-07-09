@@ -2,7 +2,7 @@
 <html lang="ro">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
 <title>Cititor Industrial Pro - Conectat DB</title>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/html5-qrcode/2.3.8/html5-qrcode.min.js"></script>
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -85,10 +85,11 @@
   @keyframes bracket-glow { 0%,100% { opacity: 1; } 50% { opacity: .55; } }
   
   .controls { display: flex; gap: 10px; flex-wrap: wrap; }
-  select, button, input[type="text"] { font-family: var(--font-sans); font-size: 13.5px; font-weight: 600; border-radius: var(--radius-sm); border: 1px solid var(--border); padding: 11px 14px; background: var(--surface); color: var(--ink); transition: all .15s ease; }
+  /* OPTIMIZARE ZOOM IOS: font-size a fost forțat la 16px pentru toate input-urile/select-urile */
+  select, button, input[type="text"] { font-family: var(--font-sans); font-size: 16px; font-weight: 600; border-radius: var(--radius-sm); border: 1px solid var(--border); padding: 11px 14px; background: var(--surface); color: var(--ink); transition: all .15s ease; }
   select, input[type="text"] { flex: 1 1 220px; font-weight: 500; cursor: text; }
   input[type="text"]:focus, select:focus { outline: none; border-color: var(--blue); box-shadow: 0 0 0 3px rgba(31,111,181,.1); }
-  button { cursor: pointer; box-shadow: 0 1px 0 rgba(32,38,44,.06); }
+  button { cursor: pointer; box-shadow: 0 1px 0 rgba(32,38,44,.06); font-size: 14px; }
   button:hover:not(:disabled) { border-color: #c9c2b0; }
   button:active:not(:disabled) { transform: translateY(1px); box-shadow: none; }
   button:disabled { opacity: .42; cursor: not-allowed; box-shadow: none; }
@@ -116,7 +117,8 @@
   .data-label { font-size: 11px; text-transform: uppercase; color: var(--ink-soft); font-weight: 700; letter-spacing: .7px; }
   
   .raw-edit-row { display: flex; gap: 8px; align-items: center; background: #1b241f; padding: 6px; border-radius: var(--radius-sm); border: 1px solid #2c3830; }
-  #rawCodeInput { font-family: var(--font-mono); font-size: 15px; font-weight: 700; letter-spacing: .5px; flex: 1; padding: 9px 10px; border: none; border-radius: 4px; background: transparent; color: #8beea3; text-shadow: 0 0 8px rgba(139,238,163,.35); width: 100%; outline: none;}
+  /* Font la cod pus la 16px pentru a opri zoom-ul de pe iOS */
+  #rawCodeInput { font-family: var(--font-mono); font-size: 16px; font-weight: 700; letter-spacing: .5px; flex: 1; padding: 9px 10px; border: none; border-radius: 4px; background: transparent; color: #8beea3; text-shadow: 0 0 8px rgba(139,238,163,.35); width: 100%; outline: none;}
   
   /* BUTOANE LOT & SWITCH OPERATIUNE DB */
   .operation-switch { display: flex; background: var(--border); padding: 4px; border-radius: var(--radius-sm); margin-bottom: 16px; }
@@ -138,7 +140,7 @@
   <div class="logo"><svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><circle cx="12" cy="12" r="9" stroke="#f0a93e" stroke-width="1.6"/><circle cx="12" cy="12" r="3.4" fill="#f0a93e"/><path d="M12 3v3M12 18v3M3 12h3M18 12h3" stroke="#f0a93e" stroke-width="1.6" stroke-linecap="round"/></svg></div>
   <div>
     <h1>Cititor Industrial</h1>
-    <div class="tag">Atribuire Manuală DB</div>
+    <div class="tag">Atribuire DB (Optimizat)</div>
   </div>
 </div>
 <main>
@@ -167,7 +169,7 @@
         <button id="btnOcr">Citeste text (OCR)</button>
       </div>
       <div class="options-row">
-        <span id="statusDetail">Incarcare DB...</span>
+        <span id="statusDetail">Sistem pregătit.</span>
       </div>
     </div>
   </div>
@@ -194,15 +196,8 @@
         </div>
         
         <div class="data-item">
-          <span class="data-label">Alege Denumirea din Baza de Date</span>
-          <select id="selectDenumire" style="width: 100%;">
-             <option value="">-- Alege produsul din catalog --</option>
-          </select>
-        </div>
-
-        <div class="data-item">
-          <span class="data-label">Producator</span>
-          <input list="listaFurnizori" id="inputProducator" placeholder="Tastează pentru a căuta sau alege din listă..." style="width: 100%;">
+          <span class="data-label">Producator (Alege sau Caută)</span>
+          <input list="listaFurnizori" id="inputProducator" placeholder="Apasă săgeata sau tastează..." style="width: 100%;">
           <datalist id="listaFurnizori"></datalist>
         </div>
       </div>
@@ -226,12 +221,12 @@ const N8N_URL_INSERT = "https://automations.sferal.ai/aloe/webhook/electrozep-in
 const TABLE_CATALOG = "oferta_catalog_produse";
 const TABLE_SCAN = "INV_scan_stoc";
 
-// AM EXTRA DIN EXCELUL TAU TOATE FIRMELE SI LE-AM PUS AICI:
+// FIRME PARTENERE EXCEL + CELE NOI
 const furnizoriDinExcel = [
     "ACREL SHANGHAI ACREL LTD", "AFRISO SRL", "ALEX FAST INSTAL", "ARRAY ELECTRONIC CO LTD",
     "ATELIER ELECTRIC KIBEDI SRL", "ATYS CO ROMANIA SRL", "AUTONIX CO LTD", "CHORUS RESEARCH ENGINEERING DISTRIBUTION",
-    "CIT AUTOMATIZARI SRL", "CONSOLIGHT COM SRL", "EL.CO SRL", "ELECTROBLUE SRL",
-    "ELECTROGLOBAL SA", "IPROEB SA", "LEGRAND ROMANIA SRL", "LIMATHERM SENSOR",
+    "CIT AUTOMATIZARI SRL", "CONSOLIGHT COM SRL", "EATON INDUSTRIES", "EL.CO SRL", "ELECTROBLUE SRL",
+    "ELECTROGLOBAL SA", "ELECTROZEP", "IPROEB SA", "LEGRAND ROMANIA SRL", "LIMATHERM SENSOR",
     "MARKUS TEHNIK SRL", "MIXVILL KERESKEDELMI ES SZOLGALTATO KFT", "OZANALATEX SRL", "PANASONIC INDUSTRY EUROPE GMBH",
     "PHOENIX CONTACT SRL", "PRODPROIECT 96 IMPEX SRL", "PROELECTRIC SRL", "PROMELEK XXI SA",
     "ROM TELTEKS CABLU IMPEX SRL", "SCHRACK TECHNIK SRL", "SEA ROMANIA SRL", "SENETIC DISTRIBUTION SRL",
@@ -253,11 +248,8 @@ const placeholder = document.getElementById('placeholder');
 const resultSection = document.getElementById('resultSection');
 const resultFormat = document.getElementById('resultFormat');
 const rawCodeInput = document.getElementById('rawCodeInput');
-
-// Campuri manuale
-const selectDenumire = document.getElementById('selectDenumire');
 const inputProducator = document.getElementById('inputProducator');
-const dataListFurnizori = document.getElementById('listaFurnizori'); // Lista ascunsa pentru search
+const dataListFurnizori = document.getElementById('listaFurnizori'); 
 
 const opIn = document.getElementById('opIn');
 const opOut = document.getElementById('opOut');
@@ -273,40 +265,22 @@ let lotCurentPiese = [];
 
 const FORMATS = [ Html5QrcodeSupportedFormats.CODE_128, Html5QrcodeSupportedFormats.DATA_MATRIX, Html5QrcodeSupportedFormats.QR_CODE, Html5QrcodeSupportedFormats.CODE_39 ];
 
-// POPULEAZA DROPDOWN-UL DE FURNIZORI LA INCARCAREA PAGINII
 function incarcaFurnizori() {
-    // Curățăm lista doar în caz că există ceva în ea
     dataListFurnizori.innerHTML = "";
-    furnizoriDinExcel.forEach(furnizor => {
+    // Sortăm alfabetic furnizorii înainte de a-i afișa
+    furnizoriDinExcel.sort().forEach(furnizor => {
         const option = document.createElement('option');
-        option.value = furnizor; // Aceasta valoare o cauta/selecteaza
+        option.value = furnizor; 
         dataListFurnizori.appendChild(option);
     });
 }
 
-// ================= FETCH BAZA DE DATE =================
+// Lăsăm funcția de DB aici pentru viitor (chiar dacă nu o afișăm pe ecran momentan)
 async function preiaCatalogDinDB() {
     try {
-        setStatus('Se conecteaza...', 'Descarcam catalogul din n8n...', 'warn');
         const response = await fetch(`${N8N_URL_DATA}?table=${TABLE_CATALOG}`);
-        if (!response.ok) throw new Error("Eroare rețea DB");
-        const data = await response.json();
-        catalogProduse = data; 
-        
-        // Populăm Dropdown-ul cu denumirile pe care le ai deja in DB
-        catalogProduse.forEach(p => {
-            const numeProdus = p.denumire || p.nume || p.nume_produs || "Produs Fără Nume";
-            const opt = document.createElement('option');
-            opt.value = numeProdus;
-            opt.textContent = numeProdus;
-            selectDenumire.appendChild(opt);
-        });
-
-        setStatus('Pregatit', 'Catalog descarcat. Alege camera si apasa Porneste.', 'ok');
-    } catch (err) {
-        console.error(err);
-        setStatus('Eroare DB', 'Nu s-a putut descărca catalogul de produse.', 'err');
-    }
+        if (response.ok) catalogProduse = await response.json(); 
+    } catch (err) { console.error("Eroare fundal DB:", err); }
 }
 
 function setOperation(type) {
@@ -333,10 +307,10 @@ async function initCameras() {
 }
 
 async function bootSystem() {
-  incarcaFurnizori(); // Apelăm încărcarea listei de furnizori
+  incarcaFurnizori(); 
   const ok = await initCameras();
   if (!ok) return setStatus('Eroare','Nicio camera detectata.','err');
-  await preiaCatalogDinDB();
+  preiaCatalogDinDB(); // Rămasă doar în fundal, nu mai blochează pornirea
   btnStart.disabled = false;
   applyBoxCSS(); 
 }
@@ -404,8 +378,7 @@ function handleSuccessfulScan(codCitit, sursa) {
 
 function resumeScanner() {
   resultSection.classList.remove('visible'); viewfinder.classList.remove('is-paused'); isPaused = false; btnOcr.disabled = false;
-  inputProducator.value = ""; // Golim casuta pentru urmatoarea piesa
-  selectDenumire.value = ""; // Resetam dropdown-ul
+  inputProducator.value = ""; 
   if (scanner && running) { try { scanner.resume(); } catch(e){} setStatus('Scanare activa', 'Se asteapta un nou cod...', 'ok'); }
 }
 
@@ -449,15 +422,13 @@ function actualizeazaInterfataLot() {
 
 function adaugaPiesaCurentaInLot() {
     const codCurent = rawCodeInput.value.trim();
-    // Preluam datele exact din lista dropdown si din casuta text completata
     const prodCurent = inputProducator.value.trim();
-    const denumireCurenta = selectDenumire.value;
 
     if (codCurent) {
         lotCurentPiese.push({
             cod_produs: codCurent,
             producator: prodCurent || "Nespecificat",
-            denumire: denumireCurenta || "Produs Fără Denumire",
+            denumire: "Fara denumire", // Am inlocuit select-ul sters cu un text by default
             actiune: currentOperation
         });
         actualizeazaInterfataLot();
@@ -467,12 +438,10 @@ function adaugaPiesaCurentaInLot() {
 async function showResult(text, sursa) {
   lastFormatName = sursa;
   resultFormat.textContent = 'Detectat: ' + sursa;
-  
   rawCodeInput.value = text;
-  
   actualizeazaInterfataLot();
   resultSection.classList.add('visible');
-  setStatus('Așteptare', `Alegeți denumirea și producătorul.`, 'ok');
+  setStatus('Așteptare', `Alegeți producătorul.`, 'ok');
   resultSection.scrollIntoView({ behavior:'smooth', block:'start' });
 }
 
@@ -507,7 +476,7 @@ btnSendBatch.addEventListener('click', async () => {
 
           if(!response.ok) throw new Error("Eroare la n8n pentru: " + piesa.cod_produs);
       }
-      alert(`SUCCES!\nS-au salvat ${lotCurentPiese.length} piese, cu tot cu denumiri, în baza de date!`);
+      alert(`SUCCES!\nS-au salvat ${lotCurentPiese.length} piese în baza de date!`);
       lotCurentPiese = []; actualizeazaInterfataLot(); resumeScanner(); setStatus('Pregatit', 'Date salvate cu succes.', 'ok');
   } catch (error) {
       console.error(error); alert("Eroare la trimitere."); lotCurentPiese.pop(); actualizeazaInterfataLot(); setStatus('Eroare', 'Eșec.', 'err');
