@@ -289,7 +289,7 @@ function setStatus(pillText, detailText, kind) {
   statusPill.textContent = pillText; statusPill.className = 'pill' + (kind ? ' ' + kind : '');
   statusDetail.textContent = detailText || '—';
 }
-const FORMATS = [ Html5QrcodeSupportedFormats.QR_CODE, Html5QrcodeSupportedFormats.DATA_MATRIX, Html5QrcodeSupportedFormats.EAN_13, Html5QrcodeSupportedFormats.CODE_128 ];
+const FORMATS = [ Html5QrcodeSupportedFormats.QR_CODE, Html5QrcodeSupportedFormats.DATA_MATRIX, Html5QrcodeSupportedFormats.EAN_13, Html5QrcodeSupportedFormats.CODE_128, Html5QrcodeSupportedFormats.CODE_39 ];
 async function initCameras() {
   try {
     const devices = await Html5Qrcode.getCameras();
