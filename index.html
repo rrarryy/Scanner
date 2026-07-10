@@ -107,11 +107,14 @@
   .options-row span#statusDetail { font-family: var(--font-mono); font-size: 11.5px; color: var(--ink-soft); font-weight: 500 !important; }
   #resultSection { display: none; }
   #resultSection.visible { display: block; }
+  
+  /* GRID ACTUALIZAT PENTRU A INCLUDE CAMPURILE NOI */
   .data-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 0; background: var(--surface-2); border-radius: var(--radius-md); border: 1px solid var(--border); margin-bottom: 16px; overflow: hidden; }
   .data-item { display: flex; flex-direction: column; gap: 5px; padding: 12px 14px; border-bottom: 1px solid var(--border); }
   .data-item:nth-child(odd):not(.full-width) { border-right: 1px solid var(--border); }
   .data-item.full-width { grid-column: span 2; }
-  .data-item:last-child { border-bottom: none; }
+  .data-item:last-child, .data-item:nth-last-child(2) { border-bottom: none; } /* Reparare bordura pentru ultimele elemente daca sunt pare */
+  .data-item.full-width:last-child { border-bottom: none; }
   .data-label { font-size: 10.5px; text-transform: uppercase; color: var(--ink-soft); font-weight: 700; letter-spacing: .7px; display: flex; align-items: center; gap: 5px; }
   .data-label::before { opacity: .6; font-size: 11px; }
   .data-value { font-size: 14px; font-weight: 500; color: var(--ink); word-break: break-word; }
@@ -119,7 +122,7 @@
   #rawCodeInput { font-family: var(--font-mono); font-size: 15px; font-weight: 700; letter-spacing: .5px; flex: 1; padding: 9px 10px; border: none; border-radius: 4px; background: transparent; color: #8beea3; text-shadow: 0 0 8px rgba(139,238,163,.35); }
   #rawCodeInput:focus { outline: none; background: rgba(139,238,163,.06); }
   
-  /* STILURI NOI PENTRU INPUTURILE LOT SI SERIAL */
+  /* STILURI PENTRU INPUTURILE EDITABILE (LOT, SERIAL, DATE) */
   .edit-input { font-family: var(--font-sans); font-size: 13px; font-weight: 600; padding: 8px 10px; border: 1px solid #d1cbbd; border-radius: 4px; background: var(--surface); color: var(--ink); width: 100%; outline: none; transition: border-color .15s ease; }
   .edit-input:focus { border-color: var(--blue); box-shadow: 0 0 0 3px rgba(31,111,181,.1); }
 
@@ -213,19 +216,30 @@
         </div>
         
         <div class="data-item">
-          <span class="data-label">Număr Lot (Batch)</span>
+          <span class="data-label">Număr Lot</span>
           <input type="text" id="inputLot" class="edit-input" placeholder="-">
         </div>
         <div class="data-item">
-          <span class="data-label">Serial Number (SN)</span>
+          <span class="data-label">Serial Number</span>
           <input type="text" id="inputSerial" class="edit-input" placeholder="-">
         </div>
-
+        <div class="data-item">
+          <span class="data-label">Data Fabricației</span>
+          <input type="text" id="inputDataProd" class="edit-input" placeholder="YYMMDD">
+        </div>
+        <div class="data-item">
+          <span class="data-label">Data Expirării</span>
+          <input type="text" id="inputDataExp" class="edit-input" placeholder="YYMMDD">
+        </div>
+        <div class="data-item">
+          <span class="data-label">Cantitate (Qty)</span>
+          <input type="text" id="inputCantitate" class="edit-input" placeholder="Bucăți">
+        </div>
         <div class="data-item">
           <span class="data-label dl-producator">Producator (DB)</span>
           <span class="data-value" id="infoProducator">Necunoscut</span>
         </div>
-        <div class="data-item">
+        <div class="data-item full-width">
           <span class="data-label dl-detalii">Denumire / Info</span>
           <span class="data-value" id="infoDenumire">Se cauta in catalog...</span>
         </div>
@@ -264,10 +278,13 @@ const phText = document.getElementById('phText');
 const resultSection = document.getElementById('resultSection');
 const resultFormat = document.getElementById('resultFormat');
 
-// Inputuri DB
+// Inputuri UI Noi
 const rawCodeInput = document.getElementById('rawCodeInput');
 const inputLot = document.getElementById('inputLot');
 const inputSerial = document.getElementById('inputSerial');
+const inputDataProd = document.getElementById('inputDataProd');
+const inputDataExp = document.getElementById('inputDataExp');
+const inputCantitate = document.getElementById('inputCantitate');
 const infoProducator = document.getElementById('infoProducator');
 const infoDenumire = document.getElementById('infoDenumire');
 
@@ -438,28 +455,50 @@ async function runOcr() {
 }
 
 /* =====================================================================
-   [NOU] PARSER INTELIGENT DE DATE (GS1 + Reguli Custom Industriale)
+   [ACTUALIZAT] PARSER AVANSAT PENTRU MAI MULTE DATE GS1
    ===================================================================== */
 function extrageDateDinCod(text) {
-    let dateExtrase = { cod: text, lot: "", serial: "" };
+    let dateExtrase = { cod: text, lot: "", serial: "", dataProd: "", dataExp: "", cantitate: "" };
     
-    // Regula Speciala: Convertizoare Electrozep / Asiace (Format: E2000... 20 caractere)
-    if (text.startsWith("E2000") && text.length === 20) {
+    // Daca este EAN-13 sau format simplu (doar cifre sub 14 caractere), returneaza direct
+    // Asta impiedica parserul sa taie EAN-ul crezand ca "10" e un identificator de lot.
+    if (text.length <= 14 && /^\d+$/.test(text)) {
+        return dateExtrase;
+    }
+
+    // Regula Speciala: Convertizoare Electrozep / Asiace
+    if (text.startsWith("E2000") && text.length >= 20) {
         dateExtrase.cod = text.substring(0, 8);      // ex: E200015T
         dateExtrase.lot = text.substring(8, 14);     // ex: 325525
         dateExtrase.serial = text.substring(14, 20); // ex: 001790
         return dateExtrase;
     }
 
-    // Heuristica pentru coduri industriale GS1 (care contin cod produs 01, lot 10, serial 21)
-    let curatat = text.replace(/\(/g, "").replace(/\)/g, "").replace(/]C1/g, "");
+    // GS1 Parser Heuristic (Extragere Inteligenta)
+    let curatat = text.replace(/\(/g, "").replace(/\)/g, "").replace(/]C1/g, ""); // Ignoram parantezele si caracterele ascunse FNC1
+    
     if (curatat.startsWith("01") && curatat.length >= 16) {
         dateExtrase.cod = curatat.substring(2, 16); // GTIN-14
         let rest = curatat.substring(16);
         
+        // Cautam Date de lungime fixa (11 - Prod Date, 17 - Exp Date)
+        let match11 = rest.match(/11(\d{6})/);
+        if (match11) dateExtrase.dataProd = match11[1];
+        
+        let match17 = rest.match(/17(\d{6})/);
+        if (match17) dateExtrase.dataExp = match17[1];
+        
+        // Cautam secvente comune de lungime variabila (10 - Lot, 21 - Serial, 30 - Cantitate)
+        // Eliminam datele pe care le-am parsat deja (11 si 17) ca sa evitam coliziuni
+        if (match11) rest = rest.replace(match11[0], "");
+        if (match17) rest = rest.replace(match17[0], "");
+
         let idx10 = rest.indexOf("10");
         let idx21 = rest.indexOf("21");
+        let idx30 = rest.indexOf("30");
         
+        // Logica simplificata de separare bazata pe ordinea identificatorilor
+        // Intr-un sistem avansat se folosesc separatoare invizibile ASCII 29. Aici folosim un fallback robust.
         if (idx10 !== -1 && idx21 !== -1) {
             if (idx10 < idx21) {
                 dateExtrase.lot = rest.substring(idx10 + 2, idx21);
@@ -472,6 +511,15 @@ function extrageDateDinCod(text) {
             dateExtrase.lot = rest.substring(idx10 + 2);
         } else if (idx21 !== -1) {
             dateExtrase.serial = rest.substring(idx21 + 2);
+        }
+        
+        // Pentru Cantitate (daca 30 apare la finalul sirului)
+        if (idx30 !== -1) {
+            let cantExtra = rest.substring(idx30 + 2, idx30 + 6).replace(/\D/g, ""); // Luam maxim 4 cifre
+            if(cantExtra) dateExtrase.cantitate = cantExtra;
+            // Curatam serialul/lotul de cifra 30 daca a fost luata din greseala
+            dateExtrase.serial = dateExtrase.serial.split("30")[0];
+            dateExtrase.lot = dateExtrase.lot.split("30")[0];
         }
     }
     
@@ -502,18 +550,16 @@ function actualizeazaInterfataLot() {
 
 function adaugaPiesaCurentaInLot() {
     const codCurent = rawCodeInput.value.trim();
-    const lotCurent = inputLot.value.trim();
-    const serialCurent = inputSerial.value.trim();
-    const prodCurent = infoProducator.textContent;
-    const denumireCurenta = infoDenumire.textContent;
-
     if (codCurent) {
         lotCurentPiese.push({
             cod_produs: codCurent,
-            lot: lotCurent,
-            serial_number: serialCurent,
-            producator: prodCurent,
-            denumire: denumireCurenta,
+            lot: inputLot.value.trim(),
+            serial_number: inputSerial.value.trim(),
+            data_prod: inputDataProd.value.trim(),
+            data_exp: inputDataExp.value.trim(),
+            cantitate: inputCantitate.value.trim(),
+            producator: infoProducator.textContent,
+            denumire: infoDenumire.textContent,
             actiune: currentOperation
         });
         actualizeazaInterfataLot();
@@ -524,13 +570,17 @@ async function showResult(text, sursa) {
   lastFormatName = sursa;
   resultFormat.textContent = 'Detectat: ' + sursa;
   
-  // PARSAREA AUTOMATA A DATELOR
+  // PARSAREA AUTOMATA A CELOR 6 CAMPURI
   const dateParsate = extrageDateDinCod(text);
+  
   rawCodeInput.value = dateParsate.cod;
   inputLot.value = dateParsate.lot;
   inputSerial.value = dateParsate.serial;
+  inputDataProd.value = dateParsate.dataProd;
+  inputDataExp.value = dateParsate.dataExp;
+  inputCantitate.value = dateParsate.cantitate;
 
-  // Cautam in Baza de date incarcata in RAM dupa codul curat extras
+  // Cautam in Baza de date
   const piesaGasita = cautaInCatalog(dateParsate.cod);
 
   if (piesaGasita) {
@@ -545,7 +595,7 @@ async function showResult(text, sursa) {
 
   actualizeazaInterfataLot();
   resultSection.classList.add('visible');
-  setStatus('Validare', `Confirmați datele și acțiunea: ${currentOperation}`, 'ok');
+  setStatus('Validare', `Verificați datele suplimentare.`, 'ok');
   resultSection.scrollIntoView({ behavior:'smooth', block:'start' });
 }
 
@@ -570,12 +620,15 @@ btnSendBatch.addEventListener('click', async () => {
 
   try {
       for (const piesa of lotCurentPiese) {
-          // Payload ACTUALIZAT CU NOILE CAMPURI
+          // Payload EXPANDAT CATRE N8N
           const payload = {
               table: TABLE_SCAN,
               cod_produs: piesa.cod_produs,
               lot: piesa.lot,
               serial_number: piesa.serial_number,
+              data_prod: piesa.data_prod,
+              data_exp: piesa.data_exp,
+              cantitate: piesa.cantitate,
               producator: piesa.producator,
               denumire: piesa.denumire,
               actiune: piesa.actiune
@@ -589,7 +642,7 @@ btnSendBatch.addEventListener('click', async () => {
           if(!response.ok) throw new Error("Eroare la scrierea piesei: " + piesa.cod_produs);
       }
       
-      alert(`SUCCES!\nAu fost înregistrate ${lotCurentPiese.length} piese (inclusiv loturi/seriale) în baza de date.`);
+      alert(`SUCCES!\nAu fost înregistrate ${lotCurentPiese.length} piese (inclusiv detaliile extra) în baza de date.`);
       lotCurentPiese = [];
       actualizeazaInterfataLot();
       resumeScanner();
