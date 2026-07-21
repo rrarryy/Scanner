@@ -108,30 +108,25 @@
   #resultSection { display: none; }
   #resultSection.visible { display: block; }
   
-  /* GRID ACTUALIZAT PENTRU A INCLUDE CAMPURILE NOI */
   .data-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 0; background: var(--surface-2); border-radius: var(--radius-md); border: 1px solid var(--border); margin-bottom: 16px; overflow: hidden; }
   .data-item { display: flex; flex-direction: column; gap: 5px; padding: 12px 14px; border-bottom: 1px solid var(--border); }
   .data-item:nth-child(odd):not(.full-width) { border-right: 1px solid var(--border); }
   .data-item.full-width { grid-column: span 2; }
-  .data-item:last-child, .data-item:nth-last-child(2) { border-bottom: none; } /* Reparare bordura pentru ultimele elemente daca sunt pare */
-  .data-item.full-width:last-child { border-bottom: none; }
+  /* MAGIC CONTAINER: Permite afisarea dinamica in grid */
+  #dynamicFieldsContainer { display: contents; } 
+
   .data-label { font-size: 10.5px; text-transform: uppercase; color: var(--ink-soft); font-weight: 700; letter-spacing: .7px; display: flex; align-items: center; gap: 5px; }
-  .data-label::before { opacity: .6; font-size: 11px; }
   .data-value { font-size: 14px; font-weight: 500; color: var(--ink); word-break: break-word; }
   .raw-edit-row { display: flex; gap: 8px; align-items: center; margin-bottom: 6px; background: #1b241f; padding: 4px; border-radius: var(--radius-sm); border: 1px solid #2c3830; }
   #rawCodeInput { font-family: var(--font-mono); font-size: 15px; font-weight: 700; letter-spacing: .5px; flex: 1; padding: 9px 10px; border: none; border-radius: 4px; background: transparent; color: #8beea3; text-shadow: 0 0 8px rgba(139,238,163,.35); }
   #rawCodeInput:focus { outline: none; background: rgba(139,238,163,.06); }
   
-  /* STILURI PENTRU INPUTURILE EDITABILE (LOT, SERIAL, DATE) */
   .edit-input { font-family: var(--font-sans); font-size: 13px; font-weight: 600; padding: 8px 10px; border: 1px solid #d1cbbd; border-radius: 4px; background: var(--surface); color: var(--ink); width: 100%; outline: none; transition: border-color .15s ease; }
   .edit-input:focus { border-color: var(--blue); box-shadow: 0 0 0 3px rgba(31,111,181,.1); }
 
   #btnRecalc { font-size: 12px; padding: 8px 12px; white-space: nowrap; background: #26332b; color: #8beea3; border: 1px solid #384a3d; }
-  #btnRecalc::before { content: '↻'; margin-right: 5px; }
   #btnRecalc:hover:not(:disabled) { background: #2e402f; }
-  /* =========================================================
-     BUTOANE LOT & SWITCH OPERATIUNE DB
-     ========================================================= */
+  
   .operation-switch { display: flex; background: var(--border); padding: 4px; border-radius: var(--radius-sm); margin-bottom: 16px; }
   .op-btn { flex: 1; text-align: center; padding: 10px; font-size: 13.5px; font-weight: 700; color: var(--ink-soft); cursor: pointer; border-radius: 4px; transition: all 0.2s; }
   .op-btn.active { background: var(--surface); color: var(--blue); box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
@@ -139,15 +134,10 @@
   .batch-status-bar { background: #eaf3fa; border: 1px dashed #bcd6ea; color: var(--blue); padding: 8px 12px; border-radius: var(--radius-sm); font-size: 12.5px; font-weight: 600; text-align: center; margin-bottom: 14px; display: none; }
   .action-group { display: flex; flex-direction: column; gap: 10px; margin-top: 4px; }
   .action-row { display: flex; gap: 10px; }
-  .btn-action { flex: 1; padding: 13px 10px; font-size: 13px; font-weight: 600; border-radius: var(--radius-sm); border: 1px solid transparent; cursor: pointer; text-align: center; transition: all 0.15s ease; box-shadow: 0 1px 2px rgba(0,0,0,0.05); }
-  .btn-action:active { transform: translateY(1px); box-shadow: none; }
+  .btn-action { flex: 1; padding: 13px 10px; font-size: 13px; font-weight: 600; border-radius: var(--radius-sm); border: 1px solid transparent; cursor: pointer; transition: all 0.15s ease; box-shadow: 0 1px 2px rgba(0,0,0,0.05); }
   .btn-discard { background: var(--surface); color: var(--danger); border-color: #e3c3ba; }
-  .btn-discard:hover { background: var(--danger-bg); }
   .btn-add-continue { background: var(--surface-2); color: var(--blue); border-color: #bcd6ea; }
-  .btn-add-continue:hover { background: #eaf3fa; }
-  .btn-send { background: linear-gradient(180deg, #4a9a5f, var(--ok)); color: white; border-color: var(--ok); box-shadow: 0 1px 0 rgba(255,255,255,.2) inset, 0 3px 10px rgba(63,125,79,.3); font-size: 14.5px; font-weight: 700; letter-spacing: .4px; }
-  .btn-send:hover { background: linear-gradient(180deg, #51a667, #376e45); }
-  .btn-send:disabled { opacity: 0.6; cursor: not-allowed; }
+  .btn-send { background: linear-gradient(180deg, #4a9a5f, var(--ok)); color: white; border-color: var(--ok); box-shadow: 0 1px 0 rgba(255,255,255,.2) inset, 0 3px 10px rgba(63,125,79,.3); font-size: 14.5px; font-weight: 700; }
 </style>
 </head>
 <body>
@@ -155,7 +145,7 @@
   <div class="logo"><svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><circle cx="12" cy="12" r="9" stroke="#f0a93e" stroke-width="1.6"/><circle cx="12" cy="12" r="3.4" fill="#f0a93e"/><path d="M12 3v3M12 18v3M3 12h3M18 12h3" stroke="#f0a93e" stroke-width="1.6" stroke-linecap="round"/></svg></div>
   <div>
     <h1>Cititor Industrial</h1>
-    <div class="tag">Scanare & Sincronizare DB</div>
+    <div class="tag">Interfață Adaptivă DB</div>
   </div>
 </div>
 <main>
@@ -167,7 +157,6 @@
     <div class="viewfinder" id="viewfinder">
       <div id="reader"></div>
       <div class="placeholder" id="placeholder">
-        <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4"><circle cx="12" cy="13" r="4"/><path d="M4 8h3l1.5-2h7L17 8h3a1 1 0 0 1 1 1v9a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V9a1 1 0 0 1 1-1z"/></svg>
         <div id="phText">Asteapta initializarea sistemelor...</div>
       </div>
       <div class="scanline"></div>
@@ -177,7 +166,7 @@
       </div>
       <div class="paused-overlay">
         <div>Analiza oprita.</div>
-        <div style="font-size: 12px; font-weight: 400; opacity: 0.75;">Datele au fost preluate — alegeți o acțiune.</div>
+        <div style="font-size: 12px; font-weight: 400; opacity: 0.75;">Datele au fost preluate.</div>
       </div>
     </div>
     <div class="card-body">
@@ -187,15 +176,15 @@
         <button id="btnStop">Opreste</button>
         <button id="btnOcr">Citeste text (OCR)</button>
       </div>
-      <div class="drag-hint" id="dragHint" style="display:none;">Trage de colțurile chihlimbarii pentru a ajusta zona de scanare.</div>
       <div class="options-row" style="border-top:none; padding-top:6px; margin-top:10px;">
         <span id="statusDetail">Incarcare...</span>
       </div>
     </div>
   </div>
+
   <div class="card" id="resultSection">
     <div class="card-head">
-      <h2><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M9 3h6a1 1 0 0 1 1 1v2H8V4a1 1 0 0 1 1-1z"/><path d="M6 6h12v14a1 1 0 0 1-1 1H7a1 1 0 0 1-1-1V6z"/><path d="M9 11h6M9 15h4"/></svg> Validare DB</h2>
+      <h2>Validare DB</h2>
       <span class="pill ok" id="resultFormat">Tip Cod</span>
     </div>
     <div class="card-body">
@@ -207,50 +196,35 @@
       <div class="batch-status-bar" id="batchStatusBar">Piese în lotul curent: 0</div>
       
       <div class="data-grid">
+        <!-- ZONA 1: Codul de Cautare in DB -->
         <div class="data-item full-width">
-          <span class="data-label">Cod Piesa Identificat</span>
+          <span class="data-label">Cod Piesa Identificat (Cheie Căutare)</span>
           <div class="raw-edit-row">
             <input type="text" id="rawCodeInput" value="" spellcheck="false">
-            <button id="btnRecalc">Editeaza</button>
+            <button id="btnRecalc">↻</button>
           </div>
         </div>
         
-        <div class="data-item">
-          <span class="data-label">Număr Lot</span>
-          <input type="text" id="inputLot" class="edit-input" placeholder="-">
-        </div>
-        <div class="data-item">
-          <span class="data-label">Serial Number</span>
-          <input type="text" id="inputSerial" class="edit-input" placeholder="-">
-        </div>
-        <div class="data-item">
-          <span class="data-label">Data Fabricației</span>
-          <input type="text" id="inputDataProd" class="edit-input" placeholder="YYMMDD">
-        </div>
-        <div class="data-item">
-          <span class="data-label">Data Expirării</span>
-          <input type="text" id="inputDataExp" class="edit-input" placeholder="YYMMDD">
-        </div>
-        <div class="data-item">
-          <span class="data-label">Cantitate (Qty)</span>
-          <input type="text" id="inputCantitate" class="edit-input" placeholder="Bucăți">
-        </div>
+        <!-- ZONA 2: Container Dinamic (Aici se vor genera căsuțele tehnice/țara automat) -->
+        <div id="dynamicFieldsContainer"></div>
+        
+        <!-- ZONA 3: Conexiune DB -->
         <div class="data-item">
           <span class="data-label dl-producator">Producator (DB)</span>
           <span class="data-value" id="infoProducator">Necunoscut</span>
         </div>
-        <div class="data-item full-width">
+        <div class="data-item">
           <span class="data-label dl-detalii">Denumire / Info</span>
-          <span class="data-value" id="infoDenumire">Se cauta in catalog...</span>
+          <span class="data-value" id="infoDenumire">Se cauta...</span>
         </div>
       </div>
       
       <div class="action-group">
         <div class="action-row">
-          <button class="btn-action btn-discard" id="btnDeleteScan">✗ STERGE SCANAREA</button>
+          <button class="btn-action btn-discard" id="btnDeleteScan">✗ STERGE</button>
           <button class="btn-action btn-add-continue" id="btnNextScan">＋ ADAUGA IN LOT</button>
         </div>
-        <button class="btn-action btn-send" id="btnSendBatch">✈ TRIMITE LOT LA SERVER (1)</button>
+        <button class="btn-action btn-send" id="btnSendBatch">✈ TRIMITE LOT (1)</button>
       </div>
     </div>
   </div>
@@ -259,11 +233,10 @@
 // --- CONFIGURARE ENDPOINT-URI N8N ---
 const N8N_URL_DATA = "https://automations.sferal.ai/aloe/webhook/electrozep-data";
 const N8N_URL_INSERT = "https://automations.sferal.ai/aloe/webhook-test/electrozep-insert";
-// Tabelul de unde citim nomenclatorul de produse
 const TABLE_CATALOG = "oferta_catalog_produse";
-// Tabelul unde scriem log-ul scanarilor
 const TABLE_SCAN = "INV_scan_stoc";
-let catalogProduse = []; // Memoria RAM pentru baza de date
+
+let catalogProduse = []; 
 let currentOperation = 'INTRARE';
 
 const cameraSelect = document.getElementById('cameraSelect');
@@ -273,18 +246,11 @@ const btnOcr = document.getElementById('btnOcr');
 const statusPill = document.getElementById('statusPill');
 const statusDetail = document.getElementById('statusDetail');
 const viewfinder = document.getElementById('viewfinder');
-const placeholder = document.getElementById('placeholder');
-const phText = document.getElementById('phText');
 const resultSection = document.getElementById('resultSection');
 const resultFormat = document.getElementById('resultFormat');
 
-// Inputuri UI Noi
 const rawCodeInput = document.getElementById('rawCodeInput');
-const inputLot = document.getElementById('inputLot');
-const inputSerial = document.getElementById('inputSerial');
-const inputDataProd = document.getElementById('inputDataProd');
-const inputDataExp = document.getElementById('inputDataExp');
-const inputCantitate = document.getElementById('inputCantitate');
+const dynamicFieldsContainer = document.getElementById('dynamicFieldsContainer');
 const infoProducator = document.getElementById('infoProducator');
 const infoDenumire = document.getElementById('infoDenumire');
 
@@ -301,105 +267,173 @@ let boxWidthPercent = 65; let boxHeightPercent = 45;
 let lastFormatName = 'Cod Standard';
 let lotCurentPiese = [];
 
-// ================= FETCH BAZA DE DATE (INITIALIZARE) =================
-async function preiaCatalogDinDB() {
-    try {
-        setStatus('Se conecteaza...', 'Descarcam catalogul din n8n...', 'warn');
-        const response = await fetch(`${N8N_URL_DATA}?table=${TABLE_CATALOG}`);
-        if (!response.ok) throw new Error("Eroare rețea DB");
-        const data = await response.json();
-        catalogProduse = data; 
-        console.log("Catalog încărcat:", catalogProduse.length, "produse.");
-        setStatus('Pregatit', 'Catalog DB conectat. Alege camera si apasa Porneste.', 'ok');
-    } catch (err) {
-        console.error(err);
-        setStatus('Eroare DB', 'Nu s-a putut descărca catalogul de produse. Funcționăm pe cache local.', 'err');
-    }
-}
-function setOperation(type) {
-    currentOperation = type;
-    if (type === 'INTRARE') {
-        opIn.classList.add('active'); opOut.classList.remove('active');
-    } else {
-        opOut.classList.add('active'); opIn.classList.remove('active');
-    }
-}
-function setStatus(pillText, detailText, kind) {
-  statusPill.textContent = pillText; statusPill.className = 'pill' + (kind ? ' ' + kind : '');
-  statusDetail.textContent = detailText || '—';
+// ================= DICTIONAR GS1 (ȚĂRI) =================
+function getGS1Country(prefixStr) {
+    const p = parseInt(prefixStr, 10);
+    if (p >= 0 && p <= 139) return "SUA & Canada";
+    if (p >= 300 && p <= 379) return "Franța";
+    if (p === 380) return "Bulgaria";
+    if (p >= 400 && p <= 440) return "Germania";
+    if (p >= 450 && p <= 459) return "Japonia";
+    if (p >= 460 && p <= 469) return "Rusia";
+    if (p === 471) return "Taiwan";
+    if (p >= 489 && p <= 489) return "Hong Kong";
+    if (p >= 490 && p <= 499) return "Japonia";
+    if (p >= 500 && p <= 509) return "Marea Britanie (UK)";
+    if (p >= 520 && p <= 521) return "Grecia";
+    if (p >= 540 && p <= 549) return "Belgia & Luxemburg";
+    if (p === 560) return "Portugalia";
+    if (p >= 570 && p <= 579) return "Danemarca";
+    if (p === 590) return "Polonia";
+    if (p === 594) return "România";
+    if (p === 599) return "Ungaria";
+    if (p >= 600 && p <= 601) return "Africa de Sud";
+    if (p >= 640 && p <= 649) return "Finlanda";
+    if (p >= 690 && p <= 699) return "China";
+    if (p >= 700 && p <= 709) return "Norvegia";
+    if (p >= 730 && p <= 739) return "Suedia";
+    if (p === 750) return "Mexic";
+    if (p >= 760 && p <= 769) return "Elveția";
+    if (p === 770 || p === 771) return "Columbia";
+    if (p >= 789 && p <= 790) return "Brazilia";
+    if (p >= 800 && p <= 839) return "Italia";
+    if (p >= 840 && p <= 849) return "Spania";
+    if (p >= 870 && p <= 879) return "Olanda";
+    if (p === 880) return "Coreea de Sud";
+    if (p === 890) return "India";
+    if (p >= 900 && p <= 919) return "Austria";
+    if (p >= 930 && p <= 939) return "Australia";
+    if (p >= 940 && p <= 949) return "Noua Zeelandă";
+    return "Internațional / Nespecificat";
 }
 
-const FORMATS = [ Html5QrcodeSupportedFormats.QR_CODE, Html5QrcodeSupportedFormats.DATA_MATRIX, Html5QrcodeSupportedFormats.EAN_13, Html5QrcodeSupportedFormats.CODE_128, Html5QrcodeSupportedFormats.CODE_39, Html5QrcodeSupportedFormats.CODE_93, Html5QrcodeSupportedFormats.ITF ];
+/* =====================================================================
+   [CREIERUL UI] PARSER-UL CARE SCRIE CÂMPURI DINAMICE
+   ===================================================================== */
+function analizeazaCodSiGenereazaUI(text) {
+    let analiza = { codDb: text, campuriGenerate: [] };
+    
+    // 1. REGULA PENTRU PIESE COMPLEXE (ELECTROZEP E2000)
+    if (text.startsWith("E2000") && text.length >= 19) {
+        // Tăiem șirul matematic în funcție de structura tehnică: E2000(5) 15(2) T3(2) LOT(x) SERIAL(6)
+        let model = text.substring(0, 5);
+        let putereVal = text.substring(5, 7);
+        let configVal = text.substring(7, 9);
+        let restul = text.substring(9);
+        let serial = restul.substring(restul.length - 6);
+        let lot = restul.substring(0, restul.length - 6);
+
+        // Formatari inteligente ("15" devine "1.5 kW")
+        let putereKw = putereVal === "15" ? "1.5 kW" : (putereVal.substring(0,1) + "." + putereVal.substring(1) + " kW");
+        let configAfisata = configVal === "T3" ? "3 Faze (T3)" : configVal;
+
+        analiza.codDb = model + putereVal + configVal; // EX: E200015T3 - Acesta va merge in căsuța de Căutare DB
+        
+        analiza.campuriGenerate.push({ key: "model_serie", label: "Seria / Modelul de bază", val: model });
+        analiza.campuriGenerate.push({ key: "putere", label: "Puterea nominală", val: putereKw });
+        analiza.campuriGenerate.push({ key: "config", label: "Configurație", val: configAfisata });
+        analiza.campuriGenerate.push({ key: "lot", label: "Număr Lot", val: lot });
+        analiza.campuriGenerate.push({ key: "serial_number", label: "Serial Number", val: serial });
+        return analiza;
+    }
+
+    // 2. REGULA PENTRU CODURI COMERCIALE (EAN-13, UPC)
+    if ((text.length === 12 || text.length === 13) && /^\d+$/.test(text)) {
+        // Aflam prefixul GS1 corect
+        let prefixGS1 = text.length === 13 ? text.substring(0, 3) : text.padStart(13, '0').substring(0,3);
+        let tara = getGS1Country(prefixGS1);
+        
+        analiza.campuriGenerate.push({ key: "tara_gs1", label: "Țara de Înregistrare (GS1)", val: tara });
+        return analiza;
+    }
+
+    // 3. REGULA PENTRU CODURI INDUSTRIALE COMPLEXE (GS1-128 / Data Matrix)
+    let curatat = text.replace(/\(/g, "").replace(/\)/g, "").replace(/]C1/g, "");
+    if (curatat.startsWith("01") && curatat.length >= 16) {
+        analiza.codDb = curatat.substring(2, 16); // Setăm GTIN-ul ca bază de căutare
+        
+        let prefixGS1 = analiza.codDb.substring(1, 4); 
+        analiza.campuriGenerate.push({ key: "tara_gs1", label: "Țara de Înregistrare", val: getGS1Country(prefixGS1) });
+        
+        let rest = curatat.substring(16);
+        let match11 = rest.match(/11(\d{6})/);
+        if (match11) { analiza.campuriGenerate.push({ key: "data_prod", label: "Data Fabricației", val: match11[1] }); rest = rest.replace(match11[0], ""); }
+        let match17 = rest.match(/17(\d{6})/);
+        if (match17) { analiza.campuriGenerate.push({ key: "data_exp", label: "Data Expirării", val: match17[1] }); rest = rest.replace(match17[0], ""); }
+
+        let idx10 = rest.indexOf("10"), idx21 = rest.indexOf("21"), idx30 = rest.indexOf("30");
+        let lot = "", serial = "";
+        
+        if (idx10 !== -1 && idx21 !== -1) {
+            if (idx10 < idx21) { lot = rest.substring(idx10 + 2, idx21); serial = rest.substring(idx21 + 2); } 
+            else { serial = rest.substring(idx21 + 2, idx10); lot = rest.substring(idx10 + 2); }
+        } else if (idx10 !== -1) { lot = rest.substring(idx10 + 2); } 
+        else if (idx21 !== -1) { serial = rest.substring(idx21 + 2); }
+        
+        if (idx30 !== -1) {
+            let extrQty = rest.substring(idx30 + 2, idx30 + 6).replace(/\D/g, "");
+            if(extrQty) analiza.campuriGenerate.push({ key: "cantitate", label: "Cantitate Pachet", val: extrQty });
+            serial = serial.split("30")[0]; lot = lot.split("30")[0];
+        }
+        
+        if (lot) analiza.campuriGenerate.push({ key: "lot", label: "Număr Lot", val: lot });
+        if (serial) analiza.campuriGenerate.push({ key: "serial_number", label: "Serial Number", val: serial });
+        
+        return analiza;
+    }
+
+    return analiza; // Daca e un cod oarecare, il trimite asa cum e
+}
+
+// ================= FUNCTII DE BAZA =================
+async function preiaCatalogDinDB() {
+    try {
+        setStatus('Se conecteaza...', 'Descarcam catalog din n8n...', 'warn');
+        const response = await fetch(`${N8N_URL_DATA}?table=${TABLE_CATALOG}`);
+        if (response.ok) catalogProduse = await response.json(); 
+        setStatus('Pregatit', 'Sistem Gata. Alege camera.', 'ok');
+    } catch (err) { setStatus('Eroare DB', 'Offline cache local.', 'err'); }
+}
+function setOperation(type) { currentOperation = type; if (type === 'INTRARE') { opIn.classList.add('active'); opOut.classList.remove('active'); } else { opOut.classList.add('active'); opIn.classList.remove('active'); } }
+function setStatus(pillText, detailText, kind) { statusPill.textContent = pillText; statusPill.className = 'pill' + (kind ? ' ' + kind : ''); statusDetail.textContent = detailText || '—'; }
+
+const FORMATS = [ Html5QrcodeSupportedFormats.QR_CODE, Html5QrcodeSupportedFormats.DATA_MATRIX, Html5QrcodeSupportedFormats.EAN_13, Html5QrcodeSupportedFormats.CODE_128, Html5QrcodeSupportedFormats.CODE_39, Html5QrcodeSupportedFormats.CODE_93 ];
 
 async function initCameras() {
   try {
     const devices = await Html5Qrcode.getCameras();
     if (devices && devices.length>0) {
       cameraSelect.innerHTML='';
-      devices.forEach((d,i)=>{ const o=document.createElement('option'); o.value=d.id; o.textContent=d.label||('Camera '+(i+1)); cameraSelect.appendChild(o); });
-      return true;
+      devices.forEach((d,i)=>{ const o=document.createElement('option'); o.value=d.id; o.textContent=d.label||('Camera '+(i+1)); cameraSelect.appendChild(o); }); return true;
     }
-  } catch (err) { console.warn('Camere:', err); }
-  return false;
+  } catch (err) {} return false;
 }
 async function bootSystem() {
-  if (location.protocol === 'file:') return setStatus('Blocat','Foloseste adresa http(s).','err');
-  setStatus('Initializare','Se detecteaza camerele...','warn');
   const ok = await initCameras();
-  if (!ok) return setStatus('Eroare','Nicio camera detectata.','err');
-  
-  await preiaCatalogDinDB();
-  btnStart.disabled = false;
-  applyBoxCSS(); 
+  if (!ok) return setStatus('Eroare','Nicio camera.','err');
+  await preiaCatalogDinDB(); btnStart.disabled = false; applyBoxCSS(); 
 }
 
-// LOGICA REDIMENSIONARE (Pastrata)
 let isResizing = false; const handles = document.querySelectorAll('.resize-handle');
 handles.forEach(h => { h.addEventListener('mousedown', dragStart); h.addEventListener('touchstart', dragStart, {passive: false}); });
 document.addEventListener('mousemove', dragMove); document.addEventListener('touchmove', dragMove, {passive: false});
 document.addEventListener('mouseup', dragEnd); document.addEventListener('touchend', dragEnd);
 function dragStart(e) { if (e.target.classList.contains('resize-handle')) { isResizing = true; e.preventDefault(); } }
-function dragMove(e) {
-    if (!isResizing) return; e.preventDefault();
-    let clientX = e.type.includes('mouse') ? e.clientX : e.touches[0].clientX;
-    let clientY = e.type.includes('mouse') ? e.clientY : e.touches[0].clientY;
-    const viewRect = viewfinder.getBoundingClientRect();
-    const centerX = viewRect.left + viewRect.width / 2; const centerY = viewRect.top + viewRect.height / 2;
-    let newW = Math.abs(clientX - centerX) * 2; let newH = Math.abs(clientY - centerY) * 2;
-    newW = Math.max(60, Math.min(newW, viewRect.width * 0.95)); newH = Math.max(60, Math.min(newH, viewRect.height * 0.95));
-    boxWidthPercent = (newW / viewRect.width) * 100; boxHeightPercent = (newH / viewRect.height) * 100;
-    applyBoxCSS();
-}
+function dragMove(e) { if (!isResizing) return; e.preventDefault(); let clientX = e.type.includes('mouse') ? e.clientX : e.touches[0].clientX; let clientY = e.type.includes('mouse') ? e.clientY : e.touches[0].clientY; const viewRect = viewfinder.getBoundingClientRect(); const centerX = viewRect.left + viewRect.width / 2; const centerY = viewRect.top + viewRect.height / 2; let newW = Math.abs(clientX - centerX) * 2; let newH = Math.abs(clientY - centerY) * 2; newW = Math.max(60, Math.min(newW, viewRect.width * 0.95)); newH = Math.max(60, Math.min(newH, viewRect.height * 0.95)); boxWidthPercent = (newW / viewRect.width) * 100; boxHeightPercent = (newH / viewRect.height) * 100; applyBoxCSS(); }
 async function dragEnd(e) { if (!isResizing) return; isResizing = false; if (running) { await stopScan(); await startScan(); } }
-function applyBoxCSS() { boxPreview.style.width = boxWidthPercent + '%'; boxPreview.style.height = boxHeightPercent + '%'; }
+function applyBoxCSS() { document.getElementById('boxPreview').style.width = boxWidthPercent + '%'; document.getElementById('boxPreview').style.height = boxHeightPercent + '%'; }
 
 async function startScan() {
   const cameraId = cameraSelect.value; if (!cameraId) return;
-  const isFrontCamera = cameraSelect.options[cameraSelect.selectedIndex]?.textContent.toLowerCase().includes('front');
-  viewfinder.classList.toggle('mirror', isFrontCamera);
+  viewfinder.classList.toggle('mirror', cameraSelect.options[cameraSelect.selectedIndex]?.textContent.toLowerCase().includes('front'));
   scanner = new Html5Qrcode('reader', { formatsToSupport: FORMATS, experimentalFeatures: { useBarCodeDetectorIfSupported: true } });
-  const config = {
-    fps: 20, 
-    qrbox: function (w, h) { return { width: Math.floor(w * (boxWidthPercent / 100)), height: Math.floor(h * (boxHeightPercent / 100)) }; },
-    videoConstraints: { deviceId: { exact: cameraId }, width: { ideal: 1920 }, height: { ideal: 1080 }, advanced: [{ focusMode: 'continuous' }] }
-  };
-  try {
-    await scanner.start(cameraId, config, (decodedText, decodedResult) => {
-        handleSuccessfulScan(decodedText, decodedResult?.result?.format?.formatName || 'Cod Standard');
-    }, () => {});
-    running = true; isPaused = false;
-    viewfinder.classList.add('active'); placeholder.style.display = 'none'; boxPreview.style.display = 'block';
-    btnStart.style.display = 'none'; btnStop.style.display = 'inline-block'; btnOcr.style.display = 'inline-block'; cameraSelect.disabled = true;
-    setStatus('Scanare activa','Cadrati codul in zona vizibila.','ok');
-  } catch (err) { setStatus('Eroare','Camera nu a pornit: '+err,'err'); scanner = null; }
+  const config = { fps: 15, qrbox: function (w, h) { return { width: Math.floor(w * (boxWidthPercent / 100)), height: Math.floor(h * (boxHeightPercent / 100)) }; }, videoConstraints: { deviceId: { exact: cameraId }, width: { ideal: 1920 }, height: { ideal: 1080 }, advanced: [{ focusMode: 'continuous' }] } };
+  try { await scanner.start(cameraId, config, (decodedText, decodedResult) => { handleSuccessfulScan(decodedText, decodedResult?.result?.format?.formatName || 'Cod Standard'); }, () => {}); running = true; isPaused = false; viewfinder.classList.add('active'); document.getElementById('placeholder').style.display = 'none'; document.getElementById('boxPreview').style.display = 'block'; btnStart.style.display = 'none'; btnStop.style.display = 'inline-block'; btnOcr.style.display = 'inline-block'; cameraSelect.disabled = true; setStatus('Scanare activa','','ok'); } catch (err) { setStatus('Eroare','Camera eroare.','err'); scanner = null; }
 }
 
 async function stopScan() {
   if (scanner && running) { try { if(isPaused) scanner.resume(); await scanner.stop(); scanner.clear(); } catch(e){} }
-  scanner=null; running=false; isPaused=false;
-  viewfinder.classList.remove('active','is-paused'); placeholder.style.display='flex'; boxPreview.style.display='none';
-  btnStart.style.display='inline-block'; btnStop.style.display='none'; btnOcr.style.display='none'; cameraSelect.disabled=false;
-  resultSection.classList.remove('visible'); setStatus('Oprit','Scanarea a fost oprita.');
+  scanner=null; running=false; isPaused=false; viewfinder.classList.remove('active','is-paused'); document.getElementById('placeholder').style.display='flex'; document.getElementById('boxPreview').style.display='none'; btnStart.style.display='inline-block'; btnStop.style.display='none'; btnOcr.style.display='none'; cameraSelect.disabled=false; resultSection.classList.remove('visible'); setStatus('Oprit','Oprit.');
 }
 
 function handleSuccessfulScan(codCitit, sursa) {
@@ -407,256 +441,113 @@ function handleSuccessfulScan(codCitit, sursa) {
   if (scanner) { try { scanner.pause(true); } catch(e){} }
   viewfinder.classList.add('is-paused'); btnOcr.disabled = true; beep();
   if (navigator.vibrate) navigator.vibrate([100,50,100]);
-  
-  let cleanCode = codCitit;
-  if (cleanCode.includes('http')) cleanCode = cleanCode.split('/').pop(); 
+  let cleanCode = codCitit; if (cleanCode.includes('http')) cleanCode = cleanCode.split('/').pop(); 
   showResult(cleanCode, sursa);
 }
 
-function resumeScanner() {
-  resultSection.classList.remove('visible'); viewfinder.classList.remove('is-paused'); isPaused = false; btnOcr.disabled = false;
-  if (scanner && running) { try { scanner.resume(); } catch(e){} setStatus('Scanare activa', 'Se asteapta un nou cod...', 'ok'); }
-}
+function resumeScanner() { resultSection.classList.remove('visible'); viewfinder.classList.remove('is-paused'); isPaused = false; btnOcr.disabled = false; if (scanner && running) { try { scanner.resume(); } catch(e){} setStatus('Scanare activa', 'Gata pentru urmatorul...', 'ok'); } }
 
 function loadScript(src) { return new Promise((res, rej) => { const s = document.createElement('script'); s.src = src; s.onload = res; s.onerror = rej; document.head.appendChild(s); }); }
 async function runOcr() {
-  const video = document.querySelector('#reader video');
-  if (!video || !video.videoWidth) return;
+  const video = document.querySelector('#reader video'); if (!video || !video.videoWidth) return;
   const cropW = Math.floor(video.videoWidth * (boxWidthPercent / 100)); const cropH = Math.floor(video.videoHeight * (boxHeightPercent / 100));
-  const canvas = document.createElement('canvas'); canvas.width = cropW * 2; canvas.height = cropH * 2;
-  const cx = canvas.getContext('2d'); cx.imageSmoothingEnabled = true;
+  const canvas = document.createElement('canvas'); canvas.width = cropW * 2; canvas.height = cropH * 2; const cx = canvas.getContext('2d'); cx.imageSmoothingEnabled = true;
   cx.drawImage(video, Math.floor((video.videoWidth - cropW) / 2), Math.floor((video.videoHeight - cropH) / 2), cropW, cropH, 0, 0, canvas.width, canvas.height);
-  
   if (!isPaused && scanner && running) { try { scanner.pause(true); } catch(e){} isPaused = true; viewfinder.classList.add('is-paused'); }
   btnOcr.disabled = true; const originalBtnText = btnOcr.textContent;
-  
   try {
-    if (!window.Tesseract) { setStatus('OCR', 'Se descarca motorul AI...', 'warn'); await loadScript('https://cdnjs.cloudflare.com/ajax/libs/tesseract.js/5.1.0/tesseract.min.js'); }
-    if (!ocrWorker) {
-      ocrWorker = await Tesseract.createWorker('eng');
-      await ocrWorker.setParameters({ tessedit_pageseg_mode: '6', tessedit_char_whitelist: 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789-.' });
-    }
-    setStatus('OCR', 'Se citeste eticheta...', 'warn'); btnOcr.textContent = 'Se proceseaza...';
+    if (!window.Tesseract) { setStatus('OCR', 'Download AI...', 'warn'); await loadScript('https://cdnjs.cloudflare.com/ajax/libs/tesseract.js/5.1.0/tesseract.min.js'); }
+    if (!ocrWorker) { ocrWorker = await Tesseract.createWorker('eng'); await ocrWorker.setParameters({ tessedit_pageseg_mode: '6', tessedit_char_whitelist: 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789-.' }); }
+    setStatus('OCR', 'Se proceseaza...', 'warn'); btnOcr.textContent = 'Asteapta...';
     const { data } = await ocrWorker.recognize(canvas);
-    
     const matches = data.text.match(/[A-Z0-9-]{4,20}/g);
-    if (matches && matches.length > 0) {
-        showResult(matches[0], 'TEXT OCR');
-    } else {
-        setStatus('Eroare', 'Nu am recunoscut caractere valide.', 'err');
-        setTimeout(() => resumeScanner(), 2000);
-    }
-  } catch (err) {
-    setStatus('Eroare OCR', 'Eroare la procesare.', 'err'); setTimeout(() => resumeScanner(), 2000);
-  } finally {
-    btnOcr.textContent = originalBtnText; if (!isPaused) btnOcr.disabled = false;
-    if (canvas) { canvas.width = 0; canvas.height = 0; }
-  }
+    if (matches && matches.length > 0) { showResult(matches[0], 'TEXT OCR'); } else { setStatus('Eroare', 'Incearca din nou.', 'err'); setTimeout(() => resumeScanner(), 2000); }
+  } catch (err) { setStatus('Eroare OCR', 'Eroare.', 'err'); setTimeout(() => resumeScanner(), 2000); } finally { btnOcr.textContent = originalBtnText; if (!isPaused) btnOcr.disabled = false; if (canvas) { canvas.width = 0; canvas.height = 0; } }
 }
 
-/* =====================================================================
-   [ACTUALIZAT] PARSER AVANSAT PENTRU MAI MULTE DATE GS1
-   ===================================================================== */
-function extrageDateDinCod(text) {
-    let dateExtrase = { cod: text, lot: "", serial: "", dataProd: "", dataExp: "", cantitate: "" };
-    
-    // Daca este EAN-13 sau format simplu (doar cifre sub 14 caractere), returneaza direct
-    // Asta impiedica parserul sa taie EAN-ul crezand ca "10" e un identificator de lot.
-    if (text.length <= 14 && /^\d+$/.test(text)) {
-        return dateExtrase;
-    }
-
-    // Regula Speciala: Convertizoare Electrozep / Asiace
-    if (text.startsWith("E2000") && text.length >= 20) {
-        dateExtrase.cod = text.substring(0, 8);      // ex: E200015T
-        dateExtrase.lot = text.substring(8, 14);     // ex: 325525
-        dateExtrase.serial = text.substring(14, 20); // ex: 001790
-        return dateExtrase;
-    }
-
-    // GS1 Parser Heuristic (Extragere Inteligenta)
-    let curatat = text.replace(/\(/g, "").replace(/\)/g, "").replace(/]C1/g, ""); // Ignoram parantezele si caracterele ascunse FNC1
-    
-    if (curatat.startsWith("01") && curatat.length >= 16) {
-        dateExtrase.cod = curatat.substring(2, 16); // GTIN-14
-        let rest = curatat.substring(16);
-        
-        // Cautam Date de lungime fixa (11 - Prod Date, 17 - Exp Date)
-        let match11 = rest.match(/11(\d{6})/);
-        if (match11) dateExtrase.dataProd = match11[1];
-        
-        let match17 = rest.match(/17(\d{6})/);
-        if (match17) dateExtrase.dataExp = match17[1];
-        
-        // Cautam secvente comune de lungime variabila (10 - Lot, 21 - Serial, 30 - Cantitate)
-        // Eliminam datele pe care le-am parsat deja (11 si 17) ca sa evitam coliziuni
-        if (match11) rest = rest.replace(match11[0], "");
-        if (match17) rest = rest.replace(match17[0], "");
-
-        let idx10 = rest.indexOf("10");
-        let idx21 = rest.indexOf("21");
-        let idx30 = rest.indexOf("30");
-        
-        // Logica simplificata de separare bazata pe ordinea identificatorilor
-        // Intr-un sistem avansat se folosesc separatoare invizibile ASCII 29. Aici folosim un fallback robust.
-        if (idx10 !== -1 && idx21 !== -1) {
-            if (idx10 < idx21) {
-                dateExtrase.lot = rest.substring(idx10 + 2, idx21);
-                dateExtrase.serial = rest.substring(idx21 + 2);
-            } else {
-                dateExtrase.serial = rest.substring(idx21 + 2, idx10);
-                dateExtrase.lot = rest.substring(idx10 + 2);
-            }
-        } else if (idx10 !== -1) {
-            dateExtrase.lot = rest.substring(idx10 + 2);
-        } else if (idx21 !== -1) {
-            dateExtrase.serial = rest.substring(idx21 + 2);
-        }
-        
-        // Pentru Cantitate (daca 30 apare la finalul sirului)
-        if (idx30 !== -1) {
-            let cantExtra = rest.substring(idx30 + 2, idx30 + 6).replace(/\D/g, ""); // Luam maxim 4 cifre
-            if(cantExtra) dateExtrase.cantitate = cantExtra;
-            // Curatam serialul/lotul de cifra 30 daca a fost luata din greseala
-            dateExtrase.serial = dateExtrase.serial.split("30")[0];
-            dateExtrase.lot = dateExtrase.lot.split("30")[0];
-        }
-    }
-    
-    return dateExtrase;
-}
-
-/* =====================================================================
-   [E] BATCH PROCESSING & INTEGRARE DB N8N
-   ===================================================================== */
 function cautaInCatalog(codCautat) {
     if(!catalogProduse || catalogProduse.length === 0) return null;
-    return catalogProduse.find(p => {
-        const dbCode = p.cod_produs || p.cod || p.sku || "";
-        return dbCode.toString().toUpperCase() === codCautat.toUpperCase();
-    });
+    return catalogProduse.find(p => { const dbCode = p.cod_produs || p.cod || p.sku || ""; return dbCode.toString().toUpperCase() === codCautat.toUpperCase(); });
 }
-
 function actualizeazaInterfataLot() {
-    if (lotCurentPiese.length > 0) {
-        batchStatusBar.style.display = 'block';
-        batchStatusBar.textContent = `Piese aflate în lotul curent: ${lotCurentPiese.length}`;
-        btnSendBatch.innerHTML = `✈ TRIMITE LOT LA SERVER (${lotCurentPiese.length + 1})`; 
-    } else {
-        batchStatusBar.style.display = 'none';
-        btnSendBatch.innerHTML = `✈ TRIMITE DIRECT (1)`;
-    }
-}
-
-function adaugaPiesaCurentaInLot() {
-    const codCurent = rawCodeInput.value.trim();
-    if (codCurent) {
-        lotCurentPiese.push({
-            cod_produs: codCurent,
-            lot: inputLot.value.trim(),
-            serial_number: inputSerial.value.trim(),
-            data_prod: inputDataProd.value.trim(),
-            data_exp: inputDataExp.value.trim(),
-            cantitate: inputCantitate.value.trim(),
-            producator: infoProducator.textContent,
-            denumire: infoDenumire.textContent,
-            actiune: currentOperation
-        });
-        actualizeazaInterfataLot();
-    }
+    if (lotCurentPiese.length > 0) { batchStatusBar.style.display = 'block'; batchStatusBar.textContent = `Piese aflate în lot: ${lotCurentPiese.length}`; btnSendBatch.innerHTML = `✈ TRIMITE LOT (${lotCurentPiese.length + 1})`; } 
+    else { batchStatusBar.style.display = 'none'; btnSendBatch.innerHTML = `✈ TRIMITE DIRECT (1)`; }
 }
 
 async function showResult(text, sursa) {
-  lastFormatName = sursa;
-  resultFormat.textContent = 'Detectat: ' + sursa;
+  lastFormatName = sursa; resultFormat.textContent = 'Sursă: ' + sursa;
   
-  // PARSAREA AUTOMATA A CELOR 6 CAMPURI
-  const dateParsate = extrageDateDinCod(text);
+  // AICI SE INJECTEAZA MAGIA UI
+  const dateAnalizate = analizeazaCodSiGenereazaUI(text);
   
-  rawCodeInput.value = dateParsate.cod;
-  inputLot.value = dateParsate.lot;
-  inputSerial.value = dateParsate.serial;
-  inputDataProd.value = dateParsate.dataProd;
-  inputDataExp.value = dateParsate.dataExp;
-  inputCantitate.value = dateParsate.cantitate;
+  rawCodeInput.value = dateAnalizate.codDb; 
+  
+  // Golim containerul si cream randurile dinamice
+  dynamicFieldsContainer.innerHTML = "";
+  dateAnalizate.campuriGenerate.forEach(camp => {
+      const htmlBlock = `
+      <div class="data-item">
+          <span class="data-label">${camp.label}</span>
+          <input type="text" class="edit-input val-dinamica" data-cheie="${camp.key}" value="${camp.val}">
+      </div>`;
+      dynamicFieldsContainer.insertAdjacentHTML('beforeend', htmlBlock);
+  });
 
-  // Cautam in Baza de date
-  const piesaGasita = cautaInCatalog(dateParsate.cod);
-
+  // Căutare în DB-ul local folosind baza
+  const piesaGasita = cautaInCatalog(dateAnalizate.codDb);
   if (piesaGasita) {
-      infoProducator.textContent = piesaGasita.producator || piesaGasita.brand || "Specificat in DB";
-      infoDenumire.textContent = piesaGasita.denumire || piesaGasita.descriere || "Piesă recunoscută.";
-      infoDenumire.style.color = "var(--ok)";
+      infoProducator.textContent = piesaGasita.producator || piesaGasita.brand || "—";
+      infoDenumire.textContent = piesaGasita.denumire || "Piesă găsită."; infoDenumire.style.color = "var(--ok)";
   } else {
       infoProducator.textContent = "—";
-      infoDenumire.textContent = "⚠ Piesa nu a fost găsită în catalogul descărcat.";
-      infoDenumire.style.color = "var(--warn)";
+      infoDenumire.textContent = "⚠ Piesă nouă (Negăsită în DB)"; infoDenumire.style.color = "var(--warn)";
   }
 
   actualizeazaInterfataLot();
-  resultSection.classList.add('visible');
-  setStatus('Validare', `Verificați datele suplimentare.`, 'ok');
-  resultSection.scrollIntoView({ behavior:'smooth', block:'start' });
+  resultSection.classList.add('visible'); setStatus('Validare', `Datele au fost extrase!`, 'ok'); resultSection.scrollIntoView({ behavior:'smooth', block:'start' });
 }
 
-// 1. ADAUGA IN LOT
-btnNextScan.addEventListener('click', () => {
-  adaugaPiesaCurentaInLot(); 
-  resumeScanner();            
-});
+function adaugaPiesaCurentaInLot() {
+    if (!rawCodeInput.value.trim()) return;
+    
+    // Construim pachetul de date preluand automat TOATE inputurile dinamice generate!
+    let obiectDate = {
+        cod_produs: rawCodeInput.value.trim(),
+        producator: infoProducator.textContent,
+        denumire: infoDenumire.textContent,
+        actiune: currentOperation
+    };
 
-// 2. STERGE
-btnDeleteScan.addEventListener('click', () => {
-  resumeScanner();
-  setStatus('Scanare activa', 'Ultima citire a fost ștearsă.', 'ok');
-});
+    // Preluam toate elementele .val-dinamica de pe ecran
+    document.querySelectorAll('.val-dinamica').forEach(input => {
+        obiectDate[input.dataset.cheie] = input.value.trim(); // Se potriveste singur: ex. obiectDate.putere = "1.5 kW"
+    });
 
-// 3. TRIMITE LA N8N
+    lotCurentPiese.push(obiectDate);
+    actualizeazaInterfataLot();
+}
+
+btnNextScan.addEventListener('click', () => { adaugaPiesaCurentaInLot(); resumeScanner(); });
+btnDeleteScan.addEventListener('click', () => { resumeScanner(); setStatus('Senzor Activ', 'Date anulate.', 'ok'); });
+
 btnSendBatch.addEventListener('click', async () => {
   adaugaPiesaCurentaInLot(); 
-  
-  setStatus('Trimitere...', `Se transmit ${lotCurentPiese.length} rânduri către n8n...`, 'warn');
+  setStatus('Trimitere...', `Se transmit ${lotCurentPiese.length} produse...`, 'warn');
   btnSendBatch.disabled = true;
 
   try {
       for (const piesa of lotCurentPiese) {
-          // Payload EXPANDAT CATRE N8N
-          const payload = {
-              table: TABLE_SCAN,
-              cod_produs: piesa.cod_produs,
-              lot: piesa.lot,
-              serial_number: piesa.serial_number,
-              data_prod: piesa.data_prod,
-              data_exp: piesa.data_exp,
-              cantitate: piesa.cantitate,
-              producator: piesa.producator,
-              denumire: piesa.denumire,
-              actiune: piesa.actiune
-          };
-
+          const payload = { table: TABLE_SCAN, ...piesa }; // Pachet SUPER flexibil
           const response = await fetch(`${N8N_URL_INSERT}?table=${TABLE_SCAN}`, {
-              method: 'POST',
-              headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify(payload)
+              method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload)
           });
-          if(!response.ok) throw new Error("Eroare la scrierea piesei: " + piesa.cod_produs);
+          if(!response.ok) throw new Error("Eroare");
       }
-      
-      alert(`SUCCES!\nAu fost înregistrate ${lotCurentPiese.length} piese (inclusiv detaliile extra) în baza de date.`);
-      lotCurentPiese = [];
-      actualizeazaInterfataLot();
-      resumeScanner();
-      setStatus('Pregatit', 'Lot procesat cu succes!', 'ok');
-
+      alert(`SUCCES!\nAu fost salvate ${lotCurentPiese.length} piese.\nToate detaliile extrase inteligent (inclusiv țara sau datele tehnice) au ajuns în n8n!`);
+      lotCurentPiese = []; actualizeazaInterfataLot(); resumeScanner(); setStatus('Pregatit', 'Trimis cu succes!', 'ok');
   } catch (error) {
-      console.error(error);
-      alert("A apărut o eroare la salvarea în baza de date. Verificați conexiunea și setările din n8n.");
-      lotCurentPiese.pop();
-      actualizeazaInterfataLot();
-      setStatus('Eroare rețea', 'Eșec la trimitere.', 'err');
-  } finally {
-      btnSendBatch.disabled = false;
-  }
+      alert("Eroare trimitere n8n."); lotCurentPiese.pop(); actualizeazaInterfataLot(); setStatus('Eroare rețea', 'Eșec.', 'err');
+  } finally { btnSendBatch.disabled = false; }
 });
 
 btnRecalc.addEventListener('click', () => { const corrected = rawCodeInput.value.trim(); if (corrected) showResult(corrected, lastFormatName); });
